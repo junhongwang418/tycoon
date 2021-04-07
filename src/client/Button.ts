@@ -14,6 +14,10 @@ class Button extends PIXI.Container {
     this.title = title;
     this.enableInteraction();
     this.draw();
+    this.addEventListeners();
+  }
+
+  private addEventListeners() {
     this.on("pointerover", () => {
       this.frame.tint = 0x1687a7;
     });

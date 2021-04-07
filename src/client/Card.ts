@@ -30,6 +30,12 @@ class Card extends PIXI.Sprite {
     return a.suit.toString().localeCompare(b.suit.toString());
   }
 
+  public greaterThan(other: Card): boolean {
+    const cardValueNumber = CardValueUtil.toNumber(this.value);
+    const otherCardValueNumber = CardValueUtil.toNumber(other.value);
+    return cardValueNumber > otherCardValueNumber;
+  }
+
   private defineHitArea(): void {
     this.hitArea = new PIXI.Rectangle(0, 0, Card.WIDTH, Card.HEIGHT);
   }
@@ -74,6 +80,14 @@ class Card extends PIXI.Sprite {
       value: this.value,
       suit: this.suit,
     };
+  }
+
+  public getValue() {
+    return this.value;
+  }
+
+  public getSuit() {
+    return this.suit;
   }
 }
 

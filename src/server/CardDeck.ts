@@ -3,13 +3,13 @@ import Card from "./Card";
 import Algorithm from "../common/Algorithm";
 
 class CardDeck {
-  public cards: Card[];
+  private cards: Card[];
 
   constructor() {
     this.cards = this.createAllPossibleCards();
   }
 
-  private createAllPossibleCards() {
+  private createAllPossibleCards(): Card[] {
     const cards = [];
     const allCardValues = Object.values(CardValue);
     const allCardSuits = Object.values(CardSuit);
