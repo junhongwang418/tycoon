@@ -33,6 +33,14 @@ class Tycoon {
     this.player2Socket.on("submit", (selectedCardJsons) => {
       this.player1Socket.emit("update", selectedCardJsons);
     });
+
+    this.player1Socket.on("win", () => {
+      this.player2Socket.emit("lose");
+    });
+
+    this.player2Socket.on("win", () => {
+      this.player1Socket.emit("lose");
+    });
   }
 }
 

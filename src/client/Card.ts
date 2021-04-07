@@ -17,6 +17,7 @@ class Card extends PIXI.Sprite {
     this.value = value;
     this.suit = suit;
     this.selected = false;
+    this.setCenterAsOrigin();
     this.enableEventListeners();
     this.addEventListeners();
     this.draw();
@@ -36,8 +37,17 @@ class Card extends PIXI.Sprite {
     return cardValueNumber > otherCardValueNumber;
   }
 
+  private setCenterAsOrigin() {
+    this.anchor.set(0.5);
+  }
+
   private defineHitArea(): void {
-    this.hitArea = new PIXI.Rectangle(0, 0, Card.WIDTH, Card.HEIGHT);
+    this.hitArea = new PIXI.Rectangle(
+      -Card.WIDTH / 2,
+      -Card.HEIGHT / 2,
+      Card.WIDTH,
+      Card.HEIGHT
+    );
   }
 
   private enableEventListeners(): void {

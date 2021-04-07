@@ -17,7 +17,7 @@ class Tycoon {
   private isMyTurn: boolean;
   private turnText: PIXI.Text;
 
-  private submitButton: Button;
+  private playButton: Button;
   private passButton: Button;
 
   private validator: Validator;
@@ -40,9 +40,17 @@ class Tycoon {
     this.stage.on("click", this.handleStageClick);
     this.socket.on("init", this.handleSocketInit);
     this.socket.on("update", this.handleSocketUpdate);
-    this.submitButton.on("click", this.handleSubmitButtonClick);
+    this.socket.on("lose", this.handleSocketLose);
+    this.playButton.on("click", this.handleSubmitButtonClick);
     this.passButton.on("click", this.handlePassButtonClick);
   }
+
+  private handleSocketLose = () => {
+    this.disableCardInteraction();
+    this.playButton.disable();
+    this.passButton.disable();
+    this.turnText.text = "You lost";
+  };
 
   private handlePassButtonClick = () => {
     if (!this.isMyTurn) return;
@@ -54,7 +62,7 @@ class Tycoon {
 
     this.isMyTurn = false;
     this.disableCardInteraction();
-    this.submitButton.disable();
+    this.playButton.disable();
     this.passButton.disable();
     this.updateTurnText();
   };
@@ -74,12 +82,17 @@ class Tycoon {
 
     this.isMyTurn = false;
     this.disableCardInteraction();
-    this.submitButton.disable();
+    this.playButton.disable();
     this.passButton.disable();
     this.updateTurnText();
 
     const sound = PIXISound.Sound.from("cardPlace1.ogg");
     sound.play();
+
+    if (this.cards.length === 0) {
+      this.socket.emit("win");
+      this.turnText.text = "You Won!";
+    }
   };
 
   private handleSocketUpdate = (lastCardJsons) => {
@@ -104,7 +117,7 @@ class Tycoon {
 
     if (!this.isMyTurn) {
       this.disableCardInteraction();
-      this.submitButton.disable();
+      this.playButton.disable();
       this.passButton.disable();
     }
   };
@@ -116,9 +129,9 @@ class Tycoon {
 
   private handleStageClick = () => {
     if (this.isCardSelectionValid()) {
-      this.submitButton.enable();
+      this.playButton.enable();
     } else {
-      this.submitButton.disable();
+      this.playButton.disable();
     }
   };
 
@@ -129,17 +142,17 @@ class Tycoon {
   }
 
   private drawSubmitButton() {
-    this.submitButton = new Button("submit");
-    this.submitButton.disable();
-    this.submitButton.x = 100;
-    this.submitButton.y = 300;
-    this.stage.addChild(this.submitButton);
+    this.playButton = new Button("play");
+    this.playButton.disable();
+    this.playButton.x = 400;
+    this.playButton.y = 400;
+    this.stage.addChild(this.playButton);
   }
 
   private drawPassButton() {
     this.passButton = new Button("pass");
-    this.passButton.x = 300;
-    this.passButton.y = 300;
+    this.passButton.x = 700;
+    this.passButton.y = 400;
     this.stage.addChild(this.passButton);
   }
 
@@ -152,10 +165,19 @@ class Tycoon {
   }
 
   private drawCards() {
+    const circleRadius = 800;
+    const circleCenterX = 640;
+    const circleCenterY = 720 + circleRadius - 100;
+
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
-      card.x = 20 + i * 35;
-      card.y = 400;
+      const startRadian = (-Math.PI / 64) * (this.cards.length / 2);
+      const endRadian = -startRadian;
+      const step = (endRadian - startRadian) / this.cards.length;
+      const radian = startRadian + step * i;
+      card.rotation = radian;
+      card.x = circleCenterX + circleRadius * Math.sin(radian);
+      card.y = circleCenterY - circleRadius * Math.cos(radian);
       this.stage.addChild(card);
     }
   }
@@ -167,8 +189,9 @@ class Tycoon {
   private drawLastCards() {
     for (let i = 0; i < this.lastCards.length; i++) {
       const card = this.lastCards[i];
-      card.x = 20 + i * 30;
-      card.y = 80;
+      card.rotation = 0;
+      card.x = 500 + i * 30;
+      card.y = 250;
       this.stage.addChild(card);
     }
   }
