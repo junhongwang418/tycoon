@@ -1,8 +1,8 @@
 export enum CardSuit {
-  Spade = "🗡",
-  Heart = "❤️",
-  Diamond = "💎",
-  Club = "☘️",
+  Spade = "Spades",
+  Heart = "Hearts",
+  Diamond = "Diamonds",
+  Club = "Clubs",
 }
 
 export enum CardValue {

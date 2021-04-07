@@ -30,7 +30,10 @@
     "@pixi/ticker": "^6.0.2",
     "@pixi/utils": "^6.0.2",
     "express": "^4.17.1",
+    "fontfaceobserver": "^2.1.0",
+    "fonts.css": "^2.0.0",
     "http": "0.0.1-security",
+    "pixi-sound": "^3.0.5",
     "pixi.js": "^6.0.2",
     "socket.io": "^4.0.1",
     "socket.io-client": "^4.0.1"
