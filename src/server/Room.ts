@@ -1,0 +1,31 @@
+import { Socket } from "socket.io";
+import President from "./President";
+
+class Room {
+  private socket1: Socket;
+  private socket2: Socket;
+
+  public addSocket(socket: Socket) {
+    if (this.isFull()) return;
+
+    if (this.socket1 == null) {
+      this.socket1 = socket;
+      socket.on("disconnect", () => (this.socket1 = null));
+    } else if (this.socket2 == null) {
+      this.socket2 = socket;
+      socket.on("disconnect", () => (this.socket2 = null));
+    }
+  }
+
+  public isFull() {
+    return this.socket1 && this.socket2;
+  }
+
+  public play() {
+    if (!this.isFull()) return;
+    const president = new President(this.socket1, this.socket2);
+    president.start();
+  }
+}
+
+export default Room;

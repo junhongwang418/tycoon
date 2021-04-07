@@ -1,14 +1,8 @@
 import * as PIXI from "pixi.js";
-import io from "socket.io-client";
-import Card, { Suit, Value } from "./Card";
+import President from "./President";
 
 const app = new PIXI.Application();
-const socket = io();
-
 document.body.appendChild(app.view);
 
-Object.values(Value).forEach((value) => {
-  Object.values(Suit).forEach((suit) => {
-    app.stage.addChild(new Card(value, suit));
-  });
-});
+const president = new President(app.stage);
+president.start();

@@ -1,54 +1,67 @@
 import * as PIXI from "pixi.js";
+import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
 import Color from "./Color";
 
-export enum Suit {
-  Spade = "♠️",
-  Heart = "❤️",
-  Diamond = "♦️",
-  Club = "♣️",
-}
-
-export enum Value {
-  Two = "2",
-  Three = "3",
-  Four = "4",
-  Five = "5",
-  Six = "6",
-  Seven = "7",
-  Eight = "8",
-  Nine = "9",
-  Ten = "10",
-  Jack = "J",
-  Queen = "Q",
-  King = "K",
-  Ace = "A",
-}
-
 class Card extends PIXI.Container {
-  private static readonly WIDTH_MILLIMETER = 64;
-  private static readonly HEIGHT_MILLIMETER = 89;
-  private static readonly CORNER_RADIUS_MILLIMETER = 3;
-  private static readonly BORDER_WIDTH = 1;
+  private static readonly WIDTH_MILLIMETER = 128;
+  private static readonly HEIGHT_MILLIMETER = 178;
+  private static readonly CORNER_RADIUS_MILLIMETER = 6;
+  private static readonly BORDER_WIDTH = 2;
+  private static readonly SELECTED_OFFSET_Y = 20;
 
-  private value: Value;
-  private suit: Suit;
+  private value: CardValue;
+  private suit: CardSuit;
 
-  constructor(value: Value, suit: Suit) {
+  private selected: boolean;
+
+  constructor(value: CardValue, suit: CardSuit) {
     super();
-    this.draw(value, suit);
-    this.x = Math.random() * 800;
-    this.y = Math.random() * 600;
+    this.value = value;
+    this.suit = suit;
+    this.selected = false;
+    this.enableEventListeners();
+    this.addEventListeners();
+    this.draw();
+  }
+
+  public static comparator(a: Card, b: Card): number {
+    const aCardValueNumber = CardValueUtil.toNumber(a.value);
+    const bCardValueNumber = CardValueUtil.toNumber(b.value);
+    if (aCardValueNumber > bCardValueNumber) return 1;
+    if (aCardValueNumber < bCardValueNumber) return -1;
+    return a.suit.localeCompare(b.suit);
+  }
+
+  private defineHitArea(): void {
+    this.hitArea = new PIXI.Rectangle(
+      0,
+      0,
+      Card.WIDTH_MILLIMETER,
+      Card.HEIGHT_MILLIMETER
+    );
+  }
+
+  private enableEventListeners(): void {
+    this.defineHitArea();
+    this.interactive = true;
+  }
+
+  private addEventListeners(): void {
+    this.on("click", () => this.select());
+  }
+
+  private select() {
+    this.y += Card.SELECTED_OFFSET_Y * (this.selected ? 1 : -1);
+    this.selected = !this.selected;
   }
 
   private createFrame(): PIXI.Graphics {
     const frame = new PIXI.Graphics();
     frame.lineStyle(Card.BORDER_WIDTH, Color.BLACK);
     frame.beginFill(Color.WHITE);
-    const x = 0;
-    const y = 0;
     frame.drawRoundedRect(
-      x,
-      y,
+      0,
+      0,
       Card.WIDTH_MILLIMETER,
       Card.HEIGHT_MILLIMETER,
       Card.CORNER_RADIUS_MILLIMETER
@@ -57,12 +70,12 @@ class Card extends PIXI.Container {
     return frame;
   }
 
-  private createValueGraphics(value: Value): PIXI.Text {
+  private createValueGraphics(value: CardValue): PIXI.Text {
     const vg = new PIXI.Text(value.toString());
     return vg;
   }
 
-  private createSuitGraphics(suit: Suit): PIXI.Text {
+  private createSuitGraphics(suit: CardSuit): PIXI.Text {
     const sg = new PIXI.Text(suit.toString());
     return sg;
   }
@@ -72,21 +85,36 @@ class Card extends PIXI.Container {
     this.addChild(frame);
   }
 
-  private drawValueGraphics(value: Value): void {
-    const vg = this.createValueGraphics(value);
+  private drawValueGraphics(): void {
+    const vg = this.createValueGraphics(this.value);
     this.addChild(vg);
   }
 
-  private drawSuitGraphics(suit: Suit): void {
-    const sg = this.createSuitGraphics(suit);
+  private drawSuitGraphics(): void {
+    const sg = this.createSuitGraphics(this.suit);
     sg.y = 20;
     this.addChild(sg);
   }
 
-  private draw(value: Value, suit: Suit) {
+  private draw() {
     this.drawFrame();
-    this.drawValueGraphics(value);
-    this.drawSuitGraphics(suit);
+    this.drawValueGraphics();
+    this.drawSuitGraphics();
+  }
+
+  public static fromJson(json: CardJson) {
+    return new Card(json.value, json.suit);
+  }
+
+  public isSelected() {
+    return this.selected;
+  }
+
+  public toJson(): CardJson {
+    return {
+      value: this.value,
+      suit: this.suit,
+    };
   }
 }
 
