@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import President from "./President";
+import Tycoon from "./Tycoon";
 
 class Room {
   private socket1: Socket;
@@ -23,8 +23,8 @@ class Room {
 
   public play() {
     if (!this.isFull()) return;
-    const president = new President(this.socket1, this.socket2);
-    president.start();
+    const tycoon = new Tycoon(this.socket1, this.socket2);
+    tycoon.start();
   }
 }
 

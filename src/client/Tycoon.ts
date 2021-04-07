@@ -6,7 +6,7 @@ import Card from "./Card";
 import Color from "./Color";
 import Text from "./Text";
 
-class President {
+class Tycoon {
   private stage: PIXI.Container;
   private socket: SocketIOClient.Socket;
 
@@ -63,7 +63,6 @@ class President {
       this.drawLastCards();
       this.isMyTurn = true;
       this.enableCardInteraction();
-      this.submitButton.enable();
       this.passButton.enable();
       this.updateTurnText();
     });
@@ -176,4 +175,4 @@ class President {
   }
 }
 
-export default President;
+export default Tycoon;

@@ -1,7 +1,7 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
 
-class President {
+class Tycoon {
   private player1Socket: Socket;
   private player2Socket: Socket;
 
@@ -36,4 +36,4 @@ class President {
   }
 }
 
-export default President;
+export default Tycoon;

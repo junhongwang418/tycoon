@@ -1,10 +1,10 @@
 import * as PIXI from "pixi.js";
-import President from "./President";
+import Tycoon from "./Tycoon";
 import WebFontLoader from "./WebFontLoader";
 
 WebFontLoader.shared.onLoad(() => {
   const app = new PIXI.Application();
   document.body.appendChild(app.view);
-  const president = new President(app.stage);
-  president.start();
+  const tycoon = new Tycoon(app.stage);
+  tycoon.start();
 });
