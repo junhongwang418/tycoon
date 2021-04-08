@@ -18,7 +18,7 @@ class Card extends PIXI.Sprite {
     this.suit = suit;
     this.selected = false;
     this.setCenterAsOrigin();
-    this.enableEventListeners();
+    this.enableInteraction();
     this.addEventListeners();
     this.draw();
   }
@@ -50,21 +50,21 @@ class Card extends PIXI.Sprite {
     );
   }
 
-  private enableEventListeners(): void {
+  private enableInteraction(): void {
     this.defineHitArea();
     this.interactive = true;
   }
 
   private addEventListeners(): void {
-    this.on("click", () => this.handleClick());
+    this.on("pointerdown", this.handlePointerDown);
   }
 
-  private handleClick() {
+  private handlePointerDown = () => {
     this.y += Card.SELECTED_OFFSET_Y * (this.selected ? 1 : -1);
     this.selected = !this.selected;
     const sound = PIXISound.Sound.from("cardSlide1.ogg");
     sound.play();
-  }
+  };
 
   public deselect() {
     if (this.selected) {

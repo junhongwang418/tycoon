@@ -10,23 +10,36 @@ const port = process.env.PORT || 3000;
 
 app.use(express.static("dist/client"));
 
-const room = new Room();
+const rooms = [new Room(), new Room()];
 
 io.on("connection", (socket: Socket) => {
   console.log(`Established a connection with id ${socket.id}`);
 
-  if (room.isFull()) {
-    console.log("The room is already full. Please try again later.");
-  } else {
-    room.addSocket(socket);
+  const roomsInterval = setInterval(() => {
+    socket.emit(
+      "rooms",
+      rooms.map((room) => room.getNumConnections())
+    );
+  }, 1000);
+
+  socket.on("enterroom", (roomNumber: number) => {
+    const room = rooms[roomNumber];
     if (room.isFull()) {
-      console.log("A new game has started!");
-      room.play();
+      console.log(`Room ${roomNumber} is already full`);
+    } else {
+      room.addSocket(socket);
+      socket.emit("enterroom-success", roomNumber);
     }
-  }
+  });
+
+  socket.on("leaveroom", (roomNumber: number) => {
+    const room = rooms[roomNumber];
+    room.removeSocket(socket);
+  });
 
   socket.on("disconnect", () => {
     console.log(`Disconnected the connection with id ${socket.id}`);
+    clearInterval(roomsInterval);
   });
 });
 

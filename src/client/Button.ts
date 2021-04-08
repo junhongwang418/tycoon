@@ -1,4 +1,3 @@
-import EventEmitter from "eventemitter3";
 import * as PIXI from "pixi.js";
 import Color from "./Color";
 import Text from "./Text";
@@ -12,19 +11,24 @@ class Button extends PIXI.Container {
   constructor(title: string) {
     super();
     this.title = title;
+    this.frame = new PIXI.Graphics();
     this.enableInteraction();
-    this.draw();
     this.addEventListeners();
+    this.draw();
   }
 
   private addEventListeners() {
-    this.on("pointerover", () => {
-      this.frame.tint = 0x1687a7;
-    });
-    this.on("pointerout", () => {
-      this.frame.tint = 0xffffff;
-    });
+    this.on("pointerover", this.handlePointerOver);
+    this.on("pointerout", this.handlePointerOut);
   }
+
+  private handlePointerOver = () => {
+    this.frame.tint = Color.BLUE;
+  };
+
+  private handlePointerOut = () => {
+    this.frame.tint = Color.WHITE;
+  };
 
   private draw() {
     this.drawFrame();
@@ -32,18 +36,23 @@ class Button extends PIXI.Container {
   }
 
   private drawFrame() {
-    const text = new Text(this.title);
-    this.frame = new PIXI.Graphics();
     this.frame.lineStyle(1, Color.BLACK);
     this.frame.beginFill(Color.WHITE);
-    this.frame.drawRect(
-      0,
-      0,
-      text.width + Button.PADDING * 2,
-      text.height + Button.PADDING * 2
-    );
+
+    const size = this.calculateSize();
+    this.frame.drawRect(0, 0, size.width, size.height);
+
     this.frame.endFill();
+
     this.addChild(this.frame);
+  }
+
+  private calculateSize(): { width: number; height: number } {
+    const text = new Text(this.title);
+    return {
+      width: text.width + Button.PADDING * 2,
+      height: text.height + Button.PADDING * 2,
+    };
   }
 
   private drawText() {
@@ -53,25 +62,24 @@ class Button extends PIXI.Container {
     this.addChild(text);
   }
 
+  private defineHitArea() {
+    const size = this.calculateSize();
+    this.hitArea = new PIXI.Rectangle(0, 0, size.width, size.height);
+  }
+
   private enableInteraction() {
-    const text = new Text(this.title);
-    this.hitArea = new PIXI.Rectangle(
-      0,
-      0,
-      text.width + Button.PADDING * 2,
-      text.height + Button.PADDING * 2
-    );
+    this.defineHitArea();
     this.interactive = true;
   }
 
   public enable() {
     this.interactive = true;
-    this.frame.tint = 0xffffff;
+    this.frame.tint = Color.WHITE;
   }
 
   public disable() {
     this.interactive = false;
-    this.frame.tint = 0xaaaaaa;
+    this.frame.tint = Color.GREY;
   }
 }
 

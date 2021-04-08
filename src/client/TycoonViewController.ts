@@ -1,14 +1,16 @@
 import * as PIXI from "pixi.js";
 import PIXISound from "pixi-sound";
-import io from "socket.io-client";
 import Button from "./Button";
 import Card from "./Card";
 import Color from "./Color";
 import Text from "./Text";
 import Validator from "./Validator";
+import App from "./App";
+import ViewController from "./ViewController";
+import RoomSelectionViewController from "./RoomSelectionViewController";
+import Popup from "./Popup";
 
-class Tycoon {
-  private stage: PIXI.Container;
+class TycoonViewController extends ViewController {
   private socket: SocketIOClient.Socket;
 
   private cards: Card[];
@@ -22,27 +24,54 @@ class Tycoon {
 
   private validator: Validator;
 
-  constructor(stage: PIXI.Container) {
-    this.stage = stage;
-    this.socket = io();
+  constructor() {
+    super();
+    this.socket = App.shared.socket;
     this.isMyTurn = false;
     this.cards = [];
     this.lastCards = [];
     this.validator = new Validator();
+
+    this.interactive = true;
+    this.hitArea = new PIXI.Rectangle(0, 0, App.WIDTH, App.HEIGHT);
+
+    this.start();
   }
 
-  public start() {
+  private start() {
     this.draw();
     this.addEventListeners();
   }
 
   private addEventListeners() {
-    this.stage.on("click", this.handleStageClick);
+    this.on("pointerdown", this.handleStageClick);
     this.socket.on("init", this.handleSocketInit);
     this.socket.on("update", this.handleSocketUpdate);
     this.socket.on("lose", this.handleSocketLose);
-    this.playButton.on("click", this.handleSubmitButtonClick);
-    this.passButton.on("click", this.handlePassButtonClick);
+    this.socket.on("forcequit", this.handleSocketForceQuit);
+    this.playButton.on("pointerdown", this.handleSubmitButtonClick);
+    this.passButton.on("pointerdown", this.handlePassButtonClick);
+  }
+
+  private handleSocketForceQuit = () => {
+    this.socket.off("init", this.handleSocketInit);
+    this.socket.off("update", this.handleSocketUpdate);
+    this.socket.off("lose", this.handleSocketLose);
+    this.socket.off("forcequit", this.handleSocketForceQuit);
+    this.disableCardInteraction();
+    this.drawForceQuitPopup();
+  };
+
+  private drawForceQuitPopup() {
+    const popup = new Popup("The other player left the game :(");
+    popup.x = App.WIDTH / 2 - popup.width / 2;
+    popup.y = App.HEIGHT / 2 - popup.height / 2;
+    this.addChild(popup);
+    popup.onOk(() => {
+      this.loadViewController(new RoomSelectionViewController());
+      const sound = PIXISound.Sound.from("click1.ogg");
+      sound.play();
+    });
   }
 
   private handleSocketLose = () => {
@@ -146,14 +175,14 @@ class Tycoon {
     this.playButton.disable();
     this.playButton.x = 400;
     this.playButton.y = 400;
-    this.stage.addChild(this.playButton);
+    this.addChild(this.playButton);
   }
 
   private drawPassButton() {
     this.passButton = new Button("pass");
     this.passButton.x = 700;
     this.passButton.y = 400;
-    this.stage.addChild(this.passButton);
+    this.addChild(this.passButton);
   }
 
   private drawTurnText() {
@@ -161,7 +190,7 @@ class Tycoon {
       fill: Color.WHITE,
     });
     this.turnText.x = 100;
-    this.stage.addChild(this.turnText);
+    this.addChild(this.turnText);
   }
 
   private drawCards() {
@@ -178,12 +207,12 @@ class Tycoon {
       card.rotation = radian;
       card.x = circleCenterX + circleRadius * Math.sin(radian);
       card.y = circleCenterY - circleRadius * Math.cos(radian);
-      this.stage.addChild(card);
+      this.addChild(card);
     }
   }
 
   private undrawCards() {
-    this.cards.forEach((card) => this.stage.removeChild(card));
+    this.cards.forEach((card) => this.removeChild(card));
   }
 
   private drawLastCards() {
@@ -192,12 +221,12 @@ class Tycoon {
       card.rotation = 0;
       card.x = 500 + i * 30;
       card.y = 250;
-      this.stage.addChild(card);
+      this.addChild(card);
     }
   }
 
   private undrawLastCards() {
-    this.lastCards.forEach((card) => this.stage.removeChild(card));
+    this.lastCards.forEach((card) => this.removeChild(card));
   }
 
   private updateTurnText() {
@@ -217,4 +246,4 @@ class Tycoon {
   }
 }
 
-export default Tycoon;
+export default TycoonViewController;
