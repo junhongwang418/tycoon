@@ -1,7 +1,7 @@
-import App from "./App";
+import Application from "./Application";
 import Button from "./Button";
 import Color from "./Color";
-import RoomSelectionViewController from "./RoomSelectionViewController";
+import LobbyViewController from "./LobbyViewController";
 import Text from "./Text";
 import TycoonViewController from "./TycoonViewController";
 import ViewController from "./ViewController";
@@ -14,7 +14,7 @@ class RoomViewController extends ViewController {
   constructor(roomNumber: number) {
     super();
     this.roomNumber = roomNumber;
-    this.socket = App.shared.socket;
+    this.socket = Application.shared.socket;
 
     this.addEventListeners();
     this.draw();
@@ -27,12 +27,9 @@ class RoomViewController extends ViewController {
   }
 
   private addEventListeners() {
-    this.socket.on("rooms", (roomPeoples: number[]) => {
-      if (roomPeoples[this.roomNumber] === 2) {
-        this.cleanup();
-        this.loadViewController(new TycoonViewController());
-        this.socket.emit("ready");
-      }
+    this.socket.on("start-game", () => {
+      this.cleanup();
+      this.loadViewController(new TycoonViewController());
     });
   }
 
@@ -41,7 +38,7 @@ class RoomViewController extends ViewController {
       fill: Color.WHITE,
     });
     text.anchor.set(0.5);
-    text.x = App.WIDTH / 2;
+    text.x = Application.WIDTH / 2;
     text.y = 100;
     this.addChild(text);
   }
@@ -51,28 +48,29 @@ class RoomViewController extends ViewController {
       fill: Color.WHITE,
     });
     text.anchor.set(0.5);
-    text.x = App.WIDTH / 2;
+    text.x = Application.WIDTH / 2;
     text.y = 300;
     this.addChild(text);
   }
 
   private drawLeaveButton() {
     const button = new Button("leave");
-    button.x = App.WIDTH / 2 - button.width / 2;
+    button.x = Application.WIDTH / 2 - button.width / 2;
     button.y = 400;
-    button.on("pointerdown", () => {
-      this.cleanup();
-      this.loadViewController(new RoomSelectionViewController());
-      this.socket.emit("leaveroom", this.roomNumber);
-
-      const sound = PIXISound.Sound.from("click1.ogg");
-      sound.play();
-    });
+    button.once("pointerdown", this.handleLeaveButtonPointerDown);
     this.addChild(button);
   }
 
+  private handleLeaveButtonPointerDown = () => {
+    this.cleanup();
+    this.loadViewController(new LobbyViewController());
+    this.socket.emit("leave-room");
+    const sound = PIXISound.Sound.from("click1.ogg");
+    sound.play();
+  };
+
   private cleanup() {
-    this.socket.off("rooms");
+    this.socket.off("start-game");
   }
 }
 

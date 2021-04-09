@@ -1,6 +1,3 @@
-import App from "./App";
-import WebFontLoader from "./WebFontLoader";
+import Application from "./Application";
 
-WebFontLoader.shared.onLoad(() => {
-  App.shared.init();
-});
+Application.shared.start();

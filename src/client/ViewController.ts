@@ -1,10 +1,10 @@
 import * as PIXI from "pixi.js";
-import App from "./App";
+import Application from "./Application";
 
 class ViewController extends PIXI.Container {
   protected loadViewController(vc: ViewController) {
-    App.shared.removeViewController(this);
-    App.shared.addViewController(vc);
+    Application.shared.removeViewController(this);
+    Application.shared.addViewController(vc);
   }
 }
 

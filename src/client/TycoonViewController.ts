@@ -5,14 +5,12 @@ import Card from "./Card";
 import Color from "./Color";
 import Text from "./Text";
 import Validator from "./Validator";
-import App from "./App";
+import Application from "./Application";
 import ViewController from "./ViewController";
-import RoomSelectionViewController from "./RoomSelectionViewController";
+import RoomSelectionViewController from "./LobbyViewController";
 import Popup from "./Popup";
 
 class TycoonViewController extends ViewController {
-  private socket: SocketIOClient.Socket;
-
   private cards: Card[];
   private lastCards: Card[];
 
@@ -26,46 +24,54 @@ class TycoonViewController extends ViewController {
 
   constructor() {
     super();
-    this.socket = App.shared.socket;
+
     this.isMyTurn = false;
     this.cards = [];
     this.lastCards = [];
     this.validator = new Validator();
 
     this.interactive = true;
-    this.hitArea = new PIXI.Rectangle(0, 0, App.WIDTH, App.HEIGHT);
+    this.hitArea = new PIXI.Rectangle(
+      0,
+      0,
+      Application.WIDTH,
+      Application.HEIGHT
+    );
 
-    this.start();
-  }
-
-  private start() {
     this.draw();
     this.addEventListeners();
   }
 
   private addEventListeners() {
     this.on("pointerdown", this.handleStageClick);
-    this.socket.on("init", this.handleSocketInit);
-    this.socket.on("update", this.handleSocketUpdate);
-    this.socket.on("lose", this.handleSocketLose);
-    this.socket.on("forcequit", this.handleSocketForceQuit);
+
+    const socket = Application.shared.socket;
+    socket.on("init", this.handleSocketInit);
+    socket.on("update", this.handleSocketUpdate);
+    socket.on("lose", this.handleSocketLose);
+    socket.on("leave", this.handleSocketForceQuit);
+
+    socket.emit("ready");
+
     this.playButton.on("pointerdown", this.handleSubmitButtonClick);
     this.passButton.on("pointerdown", this.handlePassButtonClick);
   }
 
   private handleSocketForceQuit = () => {
-    this.socket.off("init", this.handleSocketInit);
-    this.socket.off("update", this.handleSocketUpdate);
-    this.socket.off("lose", this.handleSocketLose);
-    this.socket.off("forcequit", this.handleSocketForceQuit);
+    const socket = Application.shared.socket;
+    socket.off("init", this.handleSocketInit);
+    socket.off("update", this.handleSocketUpdate);
+    socket.off("lose", this.handleSocketLose);
+    socket.off("leave", this.handleSocketForceQuit);
+
     this.disableCardInteraction();
     this.drawForceQuitPopup();
   };
 
   private drawForceQuitPopup() {
     const popup = new Popup("The other player left the game :(");
-    popup.x = App.WIDTH / 2 - popup.width / 2;
-    popup.y = App.HEIGHT / 2 - popup.height / 2;
+    popup.x = Application.WIDTH / 2 - popup.width / 2;
+    popup.y = Application.HEIGHT / 2 - popup.height / 2;
     this.addChild(popup);
     popup.onOk(() => {
       this.loadViewController(new RoomSelectionViewController());
@@ -84,7 +90,8 @@ class TycoonViewController extends ViewController {
   private handlePassButtonClick = () => {
     if (!this.isMyTurn) return;
     this.cards.forEach((card) => card.deselect());
-    this.socket.emit("submit", []);
+    const socket = Application.shared.socket;
+    socket.emit("submit", []);
 
     this.undrawLastCards();
     this.lastCards = [];
@@ -100,7 +107,10 @@ class TycoonViewController extends ViewController {
     if (!this.isMyTurn) return;
     const selectedCards = this.cards.filter((card) => card.isSelected());
     const selectedCardJsons = selectedCards.map((card) => card.toJson());
-    this.socket.emit("submit", selectedCardJsons);
+
+    const socket = Application.shared.socket;
+    socket.emit("submit", selectedCardJsons);
+
     this.undrawCards();
     this.cards = this.cards.filter((card) => !card.isSelected());
     this.drawCards();
@@ -119,7 +129,8 @@ class TycoonViewController extends ViewController {
     sound.play();
 
     if (this.cards.length === 0) {
-      this.socket.emit("win");
+      const socket = Application.shared.socket;
+      socket.emit("win");
       this.turnText.text = "You Won!";
     }
   };

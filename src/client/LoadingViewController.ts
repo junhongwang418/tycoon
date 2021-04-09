@@ -4,7 +4,7 @@ import Color from "./Color";
 import MenuViewController from "./MenuViewController";
 import Text from "./Text";
 import ViewController from "./ViewController";
-import App from "./App";
+import Application from "./Application";
 
 class LoadingIndicator extends PIXI.Container {
   private percentageText: Text;
@@ -35,30 +35,30 @@ class LoadingViewController extends ViewController {
   }
 
   private drawLoadingIndicator() {
-    console.log(this.loadingIndicator.width);
-    this.loadingIndicator.x = App.WIDTH / 2 - this.loadingIndicator.width / 2;
-    this.loadingIndicator.y = App.HEIGHT / 2;
+    this.loadingIndicator.x =
+      Application.WIDTH / 2 - this.loadingIndicator.width / 2;
+    this.loadingIndicator.y = Application.HEIGHT / 2;
     this.addChild(this.loadingIndicator);
   }
 
   private drawLoadingText() {
     this.loadingText.anchor.set(0.5);
-    this.loadingText.x = App.WIDTH / 2;
-    this.loadingText.y = App.HEIGHT / 2 - 100;
+    this.loadingText.x = Application.WIDTH / 2;
+    this.loadingText.y = Application.HEIGHT / 2 - 100;
     this.addChild(this.loadingText);
   }
 
   private loadGameAssets() {
     const loader = PIXI.Loader.shared;
 
-    const allCardValues = Object.values(CardValue);
-    const allCardSuits = Object.values(CardSuit);
+    const values = Object.values(CardValue);
+    const suits = Object.values(CardSuit);
 
-    allCardValues.forEach((value) => {
-      allCardSuits.forEach((suit) => {
-        loader.add(`card${suit}${value}.png`);
-      });
-    });
+    for (let i = 0; i < values.length; i++) {
+      for (let j = 0; j < suits.length; j++) {
+        loader.add(`card${suits[j]}${values[i]}.png`);
+      }
+    }
 
     loader.onProgress.add((loader) => {
       this.loadingIndicator.setPercentage(Math.round(loader.progress));

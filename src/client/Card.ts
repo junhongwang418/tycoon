@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import PIXISound from "pixi-sound";
+import { sound } from "@pixi/sound";
 import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
 
 class Card extends PIXI.Sprite {
@@ -62,8 +62,7 @@ class Card extends PIXI.Sprite {
   private handlePointerDown = () => {
     this.y += Card.SELECTED_OFFSET_Y * (this.selected ? 1 : -1);
     this.selected = !this.selected;
-    const sound = PIXISound.Sound.from("cardSlide1.ogg");
-    sound.play();
+    sound.play("cardSlide1.ogg");
   };
 
   public deselect() {
@@ -74,7 +73,9 @@ class Card extends PIXI.Sprite {
   }
 
   private draw() {
-    this.texture = PIXI.Texture.from(`card${this.suit}${this.value}.png`);
+    const loader = PIXI.Loader.shared;
+    this.texture =
+      loader.resources[`card${this.suit}${this.value}.png`].texture;
   }
 
   public static fromJson(json: CardJson) {
