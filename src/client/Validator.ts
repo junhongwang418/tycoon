@@ -1,14 +1,17 @@
+import { TycoonOptions } from "../common/Tycoon";
 import Card from "./Card";
 
 class Validator {
-  private options?: any;
+  private options: TycoonOptions;
 
-  constructor(options?: any) {
+  constructor(options: TycoonOptions) {
     this.options = options;
   }
 
   public isTransitionValid(prevCards: Card[], nextCards: Card[]): boolean {
-    if (nextCards.length === 0) return false;
+    if (prevCards.length === 0 && nextCards.length === 0) return false;
+
+    if (nextCards.length === 0) return true;
 
     const isNextCardsValid = this.isCardSelectionValid(nextCards);
 
@@ -16,14 +19,21 @@ class Validator {
 
     const isSameLength = prevCards.length === nextCards.length;
 
-    const isNextGreaterThanPrev = nextCards[0].greaterThan(prevCards[0]);
+    const mostSiginicantPrevCard =
+      prevCards.filter((card) => !card.isJoker())[0] || prevCards[0];
+
+    const isNextGreaterThanPrev = nextCards[0].greaterThan(
+      mostSiginicantPrevCard
+    );
 
     return isSameLength && isNextCardsValid && isNextGreaterThanPrev;
   }
 
   private isCardSelectionValid(cards: Card[]): boolean {
-    if (cards.length === 0) return false;
-    return cards.every((card) => card.getValue() === cards[0].getValue());
+    if (cards.length === 0) return true;
+    return cards
+      .filter((card) => !card.isJoker())
+      .every((card) => card.getValue() === cards[0].getValue());
   }
 }
 

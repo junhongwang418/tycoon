@@ -4,164 +4,126 @@ import Color from "./Color";
 import RoomViewController from "./RoomViewController";
 import Text from "./Text";
 import ViewController from "./ViewController";
-import PIXISound from "pixi-sound";
 import { NUM_ROOMS } from "../common/Lobby";
 import { RoomJson } from "../server/Room";
+import Button from "./Button";
 
-class Room extends PIXI.Container {
-  public static readonly WIDTH = 500;
-  public static readonly HEIGHT = 100;
-
-  private index: number;
-  private frame: PIXI.Graphics;
+class RoomButton extends Button {
+  private id: number;
   private numPeople: number;
-  private numPeopleText: Text;
 
-  constructor(index: number) {
-    super();
-
-    this.index = index;
-    this.frame = new PIXI.Graphics();
+  constructor(id: number) {
+    super(RoomButton.createRoomButtonText(id, 0));
+    this.id = id;
     this.numPeople = 0;
-    this.numPeopleText = new Text("", { fill: Color.WHITE });
-    this.setNumPeople(0);
-
-    this.draw();
-    this.enableInteraction();
-    this.addEventListeners();
   }
 
   public setNumPeople(numPeople: number) {
     this.numPeople = numPeople;
-    this.updateNumPeopleText();
+    this.updateText(RoomButton.createRoomButtonText(this.id, numPeople));
   }
 
   public getNumPeople() {
     return this.numPeople;
   }
 
-  private updateNumPeopleText() {
-    this.numPeopleText.text = `${this.numPeople} / 2 👤`;
-  }
-
-  private draw() {
-    this.drawFrame();
-    this.drawNumPeopleText();
-    this.drawLabelText();
-  }
-
-  private drawLabelText() {
-    const labelText = new Text(`🏠 Room ${this.index}`, { fill: Color.WHITE });
-    labelText.anchor.set(0.5);
-    labelText.x = 20 + labelText.width / 2;
-    labelText.y = Room.HEIGHT / 2;
-    this.addChild(labelText);
-  }
-
-  private addEventListeners() {
-    this.on("pointerover", this.handlePointerOver);
-    this.on("pointerout", this.handlePointerOut);
-  }
-
-  private handlePointerOver = () => {
-    this.frame.tint = Color.BLUE;
-  };
-
-  private handlePointerOut = () => {
-    this.frame.tint = Color.WHITE;
-  };
-
-  private drawFrame() {
-    this.frame.lineStyle(1, Color.WHITE);
-    this.frame.beginFill(Color.BLACK);
-    this.frame.drawRect(0, 0, Room.WIDTH, Room.HEIGHT);
-    this.frame.endFill();
-    this.addChild(this.frame);
-  }
-
-  private drawNumPeopleText() {
-    this.numPeopleText.anchor.set(0.5);
-    this.numPeopleText.x = 400;
-    this.numPeopleText.y = Room.HEIGHT / 2;
-    this.addChild(this.numPeopleText);
-  }
-
-  private defineHitArea() {
-    this.hitArea = new PIXI.Rectangle(0, 0, Room.WIDTH, Room.HEIGHT);
-  }
-
-  private enableInteraction() {
-    this.interactive = true;
-    this.defineHitArea();
+  private static createRoomButtonText(id: number, numPeople: number) {
+    return `🏠 Room ${id}     ${numPeople}/2 👤`;
   }
 }
 
 class LobbyViewController extends ViewController {
-  private rooms: Room[];
+  private promptText: Text;
+  private roomButtons: RoomButton[];
 
   constructor() {
     super();
+    this.promptText = new Text("Select A Room To Join 🚪", {
+      fill: Color.WHITE,
+    });
+    this.roomButtons = this.createRoomButtons();
 
-    this.rooms = this.createRooms();
-    this.drawPromptText();
-    this.drawRooms();
+    this.layout();
+    this.draw();
+
     this.addEventListeners();
   }
 
-  private createRooms() {
-    const rooms = [];
+  private createRoomButtons() {
+    const roomButtons = [];
     for (let i = 0; i < NUM_ROOMS; i++) {
-      rooms.push(new Room(i));
-    }
-    return rooms;
-  }
-
-  private drawRooms() {
-    for (let i = 0; i < this.rooms.length; i++) {
-      const room = this.rooms[i];
-      room.x = 400;
-      room.y = 200 + 120 * i;
-      room.on("pointerdown", () => {
-        if (room.getNumPeople() < 2) {
+      const button = new RoomButton(i);
+      roomButtons.push(button);
+      button.onPointerDown(() => {
+        if (button.getNumPeople() < 2) {
           const socket = Application.shared.socket;
           socket.emit("enter-room", i);
         }
-        const sound = PIXISound.Sound.from("click1.ogg");
-        sound.play();
       });
-      this.addChild(room);
     }
+    return roomButtons;
+  }
+
+  private layoutRoomButtons() {
+    for (let i = 0; i < this.roomButtons.length; i++) {
+      const button = this.roomButtons[i];
+      button.setCenterAsOrigin();
+      button.x = Application.WIDTH / 2;
+      button.y = 200 + 60 * i;
+    }
+  }
+
+  private drawRoomButtons() {
+    this.roomButtons.forEach((button) => this.addChild(button));
   }
 
   private addEventListeners() {
     const socket = Application.shared.socket;
-    socket.on("room-status", this.handleSocketRoomStatus);
+    socket.on("rooms-status", this.handleSocketRoomsStatus);
     socket.on("enter-room", this.handleSocketEnterRoom);
   }
 
-  private handleSocketRoomStatus = (roomJsons: RoomJson[]) => {
-    for (let i = 0; i < this.rooms.length; i++) {
-      this.rooms[i].setNumPeople(roomJsons[i].numPlayers);
+  private handleSocketRoomsStatus = (roomJsons: RoomJson[]) => {
+    for (let i = 0; i < this.roomButtons.length; i++) {
+      const numPlayers = roomJsons[i].numPlayers;
+      this.roomButtons[i].setNumPeople(numPlayers);
+      if (numPlayers === 2) {
+        this.roomButtons[i].disable();
+      } else {
+        this.roomButtons[i].enable();
+      }
     }
   };
 
-  private handleSocketEnterRoom = (roomIndex: number) => {
-    this.cleanup();
-    this.loadViewController(new RoomViewController(roomIndex));
+  private handleSocketEnterRoom = () => {
+    this.loadViewController(new RoomViewController());
   };
 
-  private cleanup() {
+  protected cleanUp() {
+    super.cleanUp();
     const socket = Application.shared.socket;
-    socket.off("room-status");
+    socket.off("rooms-status");
     socket.off("enter-room");
   }
 
   private drawPromptText() {
-    const text = new Text("Select A Room To Join 🚪", { fill: Color.WHITE });
-    text.anchor.set(0.5);
-    text.x = Application.WIDTH / 2;
-    text.y = 100;
-    this.addChild(text);
+    this.addChild(this.promptText);
+  }
+
+  private draw() {
+    this.drawPromptText();
+    this.drawRoomButtons();
+  }
+
+  private layoutPromptText() {
+    this.promptText.anchor.set(0.5);
+    this.promptText.x = Application.WIDTH / 2;
+    this.promptText.y = 100;
+  }
+
+  private layout() {
+    this.layoutPromptText();
+    this.layoutRoomButtons();
   }
 }
 

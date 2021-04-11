@@ -3,6 +3,8 @@ import Card from "./Card";
 import Algorithm from "../common/Algorithm";
 
 class CardDeck {
+  private static readonly NUM_JOKERS = 2;
+
   private cards: Card[];
 
   constructor() {
@@ -11,14 +13,20 @@ class CardDeck {
 
   private createAllPossibleCards(): Card[] {
     const cards = [];
-    const allCardValues = Object.values(CardValue);
-    const allCardSuits = Object.values(CardSuit);
+    const values = Object.values(CardValue).filter(
+      (v) => v !== CardValue.Joker
+    );
+    const suits = Object.values(CardSuit).filter((s) => s !== CardSuit.Joker);
 
-    allCardValues.forEach((value) => {
-      allCardSuits.forEach((suit) => {
+    values.forEach((value) => {
+      suits.forEach((suit) => {
         cards.push(new Card(value, suit));
       });
     });
+
+    for (let i = 0; i < CardDeck.NUM_JOKERS; i++) {
+      cards.push(new Card(CardValue.Joker, CardSuit.Joker));
+    }
 
     return cards;
   }

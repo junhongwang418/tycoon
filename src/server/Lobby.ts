@@ -45,7 +45,7 @@ class Lobby {
     setInterval(() => {
       const roomJsons = this.rooms.map((room) => room.toJson());
       this.sockets.forEach((socket) => {
-        socket.emit("room-status", roomJsons);
+        socket.emit("rooms-status", roomJsons);
       });
     }, oneSecondInMilliseonds);
   }

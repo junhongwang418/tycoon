@@ -1,5 +1,6 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
+import { TycoonOptions } from "../common/Tycoon";
 
 class Tycoon {
   private player1Socket: Socket;
@@ -26,11 +27,11 @@ class Tycoon {
       isMyTurn: false,
     });
 
-    this.player1Socket.on("submit", (selectedCardJsons) => {
+    this.player1Socket.on("action", (selectedCardJsons) => {
       this.player2Socket.emit("update", selectedCardJsons);
     });
 
-    this.player2Socket.on("submit", (selectedCardJsons) => {
+    this.player2Socket.on("action", (selectedCardJsons) => {
       this.player1Socket.emit("update", selectedCardJsons);
     });
 

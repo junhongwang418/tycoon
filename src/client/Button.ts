@@ -1,16 +1,20 @@
 import * as PIXI from "pixi.js";
 import Color from "./Color";
+import Container from "./Container";
+import Sound from "./Sound";
 import Text from "./Text";
 
-class Button extends PIXI.Container {
+class Button extends Container {
   private static readonly PADDING = 8;
 
-  private title: string;
+  private text: Text;
   private frame: PIXI.Graphics;
 
-  constructor(title: string) {
+  private handlePointerDown = () => {};
+
+  constructor(text: string) {
     super();
-    this.title = title;
+    this.text = new Text(text);
     this.frame = new PIXI.Graphics();
     this.enableInteraction();
     this.addEventListeners();
@@ -20,6 +24,10 @@ class Button extends PIXI.Container {
   private addEventListeners() {
     this.on("pointerover", this.handlePointerOver);
     this.on("pointerout", this.handlePointerOut);
+    this.on("pointerdown", () => {
+      this.handlePointerDown();
+      Sound.play("click1.ogg");
+    });
   }
 
   private handlePointerOver = () => {
@@ -47,19 +55,25 @@ class Button extends PIXI.Container {
     this.addChild(this.frame);
   }
 
+  private undrawFrame() {
+    this.removeChild(this.frame);
+  }
+
   private calculateSize(): { width: number; height: number } {
-    const text = new Text(this.title);
     return {
-      width: text.width + Button.PADDING * 2,
-      height: text.height + Button.PADDING * 2,
+      width: this.text.width + Button.PADDING * 2,
+      height: this.text.height + Button.PADDING * 2,
     };
   }
 
   private drawText() {
-    const text = new Text(this.title);
-    text.x = Button.PADDING;
-    text.y = Button.PADDING;
-    this.addChild(text);
+    this.text.x = Button.PADDING;
+    this.text.y = Button.PADDING;
+    this.addChild(this.text);
+  }
+
+  private undrawText() {
+    this.removeChild(this.text);
   }
 
   private defineHitArea() {
@@ -80,6 +94,23 @@ class Button extends PIXI.Container {
   public disable() {
     this.interactive = false;
     this.frame.tint = Color.GREY;
+  }
+
+  public onPointerDown(cb: () => void) {
+    this.handlePointerDown = cb;
+  }
+
+  public updateText(text: string) {
+    this.undrawFrame();
+    this.undrawText();
+    this.text.text = text;
+    this.defineHitArea();
+    this.drawFrame();
+    this.drawText();
+
+    if (this.isOriginCenter) {
+      this.setCenterAsOriginBasedOnCurrentSize();
+    }
   }
 }
 

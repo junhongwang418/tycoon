@@ -5,8 +5,13 @@ import LoadingViewController from "./LoadingViewController";
 import WebFontLoader from "./WebFontLoader";
 
 class Application {
-  public static readonly WIDTH = 1280;
-  public static readonly HEIGHT = 720;
+  public static readonly WIDTH = 800;
+  public static readonly HEIGHT = 600;
+  public static readonly SPACING = 8;
+
+  public static spacing(count: number) {
+    return Application.SPACING * count;
+  }
 
   public static readonly shared = new Application();
 
@@ -18,6 +23,8 @@ class Application {
     this.app = new PIXI.Application({
       width: Application.WIDTH,
       height: Application.HEIGHT,
+      resolution: window.devicePixelRatio,
+      autoDensity: true,
     });
     this.socket = io();
   }

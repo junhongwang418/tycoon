@@ -9,27 +9,111 @@ import Application from "./Application";
 import ViewController from "./ViewController";
 import RoomSelectionViewController from "./LobbyViewController";
 import Popup from "./Popup";
+import Sound from "./Sound";
+import { CardJson } from "../common/Card";
+import Container from "./Container";
+import { TycoonOptions } from "../common/Tycoon";
+
+class Alert extends Container {
+  private static get WIDTH() {
+    return (Application.WIDTH * 2) / 3;
+  }
+
+  private static get HEIGHT() {
+    return (Application.HEIGHT * 2) / 3;
+  }
+
+  private handleOk = () => {};
+
+  private frame: PIXI.Graphics;
+  private messageText: Text;
+  private okButton: Button;
+
+  constructor(text: string) {
+    super();
+    this.frame = this.createFrame();
+    this.messageText = new Text(text, { fill: Color.WHITE });
+    this.okButton = this.createOkButton();
+    this.layout();
+    this.draw();
+  }
+
+  private draw() {
+    this.addChild(this.frame);
+    this.addChild(this.messageText);
+    this.addChild(this.okButton);
+  }
+
+  private layout() {
+    this.layoutFrame();
+    this.layoutMessageText();
+    this.layoutOkButton();
+  }
+
+  private layoutFrame() {
+    this.frame.x = (Application.WIDTH - this.frame.width) / 2;
+    this.frame.y = (Application.HEIGHT - this.frame.height) / 2;
+  }
+
+  private layoutOkButton() {
+    this.okButton.setCenterAsOrigin();
+    this.okButton.x = Application.WIDTH / 2;
+    this.okButton.y = Application.HEIGHT / 2 + Application.spacing(5);
+  }
+
+  private createOkButton() {
+    const button = new Button("ok");
+    button.onPointerDown(() => this.handleOk());
+    return button;
+  }
+
+  private layoutMessageText() {
+    this.messageText.anchor.set(0.5);
+    this.messageText.x = Application.WIDTH / 2;
+    this.messageText.y = Application.HEIGHT / 2 - Application.spacing(5);
+  }
+
+  private createFrame() {
+    const frame = new PIXI.Graphics();
+    frame.lineStyle(1, Color.WHITE);
+    frame.beginFill(Color.BLACK);
+    frame.drawRect(0, 0, Alert.WIDTH, Alert.HEIGHT);
+    frame.endFill();
+    return frame;
+  }
+
+  public onOk(cb: () => void) {
+    this.handleOk = cb;
+  }
+}
 
 class TycoonViewController extends ViewController {
-  private cards: Card[];
-  private lastCards: Card[];
+  private myCards: Card[];
+  private playedCards: Card[][];
 
   private isMyTurn: boolean;
-  private turnText: PIXI.Text;
-
-  private playButton: Button;
-  private passButton: Button;
-
   private validator: Validator;
 
-  constructor() {
+  private promptText: Text;
+  private actionButton: Button;
+
+  constructor(tycoonOptions: TycoonOptions) {
     super();
 
     this.isMyTurn = false;
-    this.cards = [];
-    this.lastCards = [];
-    this.validator = new Validator();
+    this.myCards = [];
+    this.playedCards = [];
+    this.validator = new Validator(tycoonOptions);
+    this.promptText = new Text("", { fill: Color.WHITE });
+    this.actionButton = this.createActionButton();
 
+    this.layout();
+    this.draw();
+    this.enableInteraction();
+    this.addEventListeners();
+  }
+
+  private enableInteraction() {
     this.interactive = true;
     this.hitArea = new PIXI.Rectangle(
       0,
@@ -37,223 +121,225 @@ class TycoonViewController extends ViewController {
       Application.WIDTH,
       Application.HEIGHT
     );
+  }
 
-    this.draw();
-    this.addEventListeners();
+  private createActionButton() {
+    const button = new Button("pass");
+    button.disable();
+    button.onPointerDown(this.handleActionButtonPointerDown);
+    return button;
+  }
+
+  private layout() {
+    this.layoutPromptText();
+    this.layoutActionButton();
+  }
+
+  private layoutPromptText() {
+    this.promptText.anchor.set(0.5);
+    this.promptText.x = Application.WIDTH / 2;
+    this.promptText.y = Application.spacing(5);
+  }
+
+  private layoutActionButton() {
+    this.actionButton.setCenterAsOrigin();
+    this.actionButton.x = Application.WIDTH / 2;
+    this.actionButton.y = Application.HEIGHT / 2 + Application.spacing(5);
   }
 
   private addEventListeners() {
-    this.on("pointerdown", this.handleStageClick);
+    this.on("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
     socket.on("init", this.handleSocketInit);
     socket.on("update", this.handleSocketUpdate);
     socket.on("lose", this.handleSocketLose);
-    socket.on("leave", this.handleSocketForceQuit);
-
+    socket.on("leave", this.handleSocketLeave);
     socket.emit("ready");
-
-    this.playButton.on("pointerdown", this.handleSubmitButtonClick);
-    this.passButton.on("pointerdown", this.handlePassButtonClick);
   }
 
-  private handleSocketForceQuit = () => {
+  private handleActionButtonPointerDown = () => {
+    const selectedCards = this.myCards.filter((card) => card.isSelected());
+    const selectedCardJsons = selectedCards.map((card) => card.toJson());
+
+    const socket = Application.shared.socket;
+    socket.emit("action", selectedCardJsons);
+
+    this.myCards = this.myCards.filter((card) => !card.isSelected());
+    this.layoutMyCards();
+
+    const isPass = selectedCards.length === 0;
+    if (isPass) {
+      this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.playedCards = [];
+    } else {
+      this.playedCards.push(selectedCards);
+      selectedCards.forEach((card) => {
+        this.removeChild(card);
+        this.addChild(card);
+        card.interactive = false;
+      });
+      this.layoutSelectedCards(selectedCards);
+    }
+
+    this.isMyTurn = false;
+    this.disableMyCardsInteraction();
+    this.updatePromptTextBasedOnMyTurn();
+    this.updateActionButton();
+
+    Sound.play("cardPlace1.ogg");
+
+    if (this.myCards.length === 0) {
+      const socket = Application.shared.socket;
+      socket.emit("win");
+      this.promptText.text = "You Won!";
+    }
+  };
+
+  private layoutSelectedCards(cards: Card[]) {
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      card.rotation = Math.random() * Math.PI * 2;
+      card.x = Application.WIDTH / 2 + i * 30;
+      card.y = Application.HEIGHT / 2 - card.height / 2;
+    }
+  }
+
+  private handleSocketLeave = () => {
+    this.drawForceQuitPopup();
+  };
+
+  protected cleanUp() {
     const socket = Application.shared.socket;
     socket.off("init", this.handleSocketInit);
     socket.off("update", this.handleSocketUpdate);
     socket.off("lose", this.handleSocketLose);
-    socket.off("leave", this.handleSocketForceQuit);
-
-    this.disableCardInteraction();
-    this.drawForceQuitPopup();
-  };
+    socket.off("leave", this.handleSocketLeave);
+  }
 
   private drawForceQuitPopup() {
-    const popup = new Popup("The other player left the game :(");
-    popup.x = Application.WIDTH / 2 - popup.width / 2;
-    popup.y = Application.HEIGHT / 2 - popup.height / 2;
+    const alert = new Alert("The other player left the game :(");
+    const popup = new Popup(alert);
     this.addChild(popup);
-    popup.onOk(() => {
+    alert.onOk(() => {
       this.loadViewController(new RoomSelectionViewController());
-      const sound = PIXISound.Sound.from("click1.ogg");
-      sound.play();
     });
   }
 
   private handleSocketLose = () => {
-    this.disableCardInteraction();
-    this.playButton.disable();
-    this.passButton.disable();
-    this.turnText.text = "You lost";
+    this.disableMyCardsInteraction();
+    this.actionButton.disable();
+    this.promptText.text = "You lost";
   };
 
-  private handlePassButtonClick = () => {
-    if (!this.isMyTurn) return;
-    this.cards.forEach((card) => card.deselect());
-    const socket = Application.shared.socket;
-    socket.emit("submit", []);
-
-    this.undrawLastCards();
-    this.lastCards = [];
-
-    this.isMyTurn = false;
-    this.disableCardInteraction();
-    this.playButton.disable();
-    this.passButton.disable();
-    this.updateTurnText();
-  };
-
-  private handleSubmitButtonClick = () => {
-    if (!this.isMyTurn) return;
-    const selectedCards = this.cards.filter((card) => card.isSelected());
-    const selectedCardJsons = selectedCards.map((card) => card.toJson());
-
-    const socket = Application.shared.socket;
-    socket.emit("submit", selectedCardJsons);
-
-    this.undrawCards();
-    this.cards = this.cards.filter((card) => !card.isSelected());
-    this.drawCards();
-
-    this.undrawLastCards();
-    this.lastCards = selectedCards;
-    this.drawLastCards();
-
-    this.isMyTurn = false;
-    this.disableCardInteraction();
-    this.playButton.disable();
-    this.passButton.disable();
-    this.updateTurnText();
-
-    const sound = PIXISound.Sound.from("cardPlace1.ogg");
-    sound.play();
-
-    if (this.cards.length === 0) {
-      const socket = Application.shared.socket;
-      socket.emit("win");
-      this.turnText.text = "You Won!";
+  private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
+    const theirSelectedCards = lastCardJsons.map((json) => Card.fromJson(json));
+    theirSelectedCards.forEach((card) => (card.interactive = false));
+    if (theirSelectedCards.length === 0) {
+      this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.playedCards = [];
+    } else {
+      this.addChild(...theirSelectedCards);
+      this.layoutSelectedCards(theirSelectedCards);
+      this.playedCards.push(theirSelectedCards);
+      Sound.play("cardPlace1.ogg");
     }
-  };
 
-  private handleSocketUpdate = (lastCardJsons) => {
-    this.undrawLastCards();
-    this.lastCards = lastCardJsons.map((json) => Card.fromJson(json));
-    this.drawLastCards();
     this.isMyTurn = true;
-    this.enableCardInteraction();
-    this.passButton.enable();
-    this.updateTurnText();
+    this.enableMyCardsInteraction();
+    this.updatePromptTextBasedOnMyTurn();
+    this.updateActionButton();
   };
 
   private handleSocketInit = ({ cardJsons, isMyTurn }) => {
-    this.undrawCards();
-    this.undrawLastCards();
-
     this.isMyTurn = isMyTurn;
-    this.cards = cardJsons.map((json) => Card.fromJson(json));
-    this.cards.sort(Card.comparator);
-    this.drawCards();
-    this.updateTurnText();
+    this.myCards = cardJsons.map((json) => Card.fromJson(json));
+    this.myCards.sort(Card.comparator);
+    this.drawMyCards();
+    this.layoutMyCards();
+    this.updatePromptTextBasedOnMyTurn();
+    this.updateActionButton();
 
     if (!this.isMyTurn) {
-      this.disableCardInteraction();
-      this.playButton.disable();
-      this.passButton.disable();
+      this.disableMyCardsInteraction();
     }
   };
 
-  private isCardSelectionValid() {
-    const selectedCards = this.cards.filter((card) => card.isSelected());
-    return this.validator.isTransitionValid(this.lastCards, selectedCards);
+  private updatePromptTextBasedOnMyTurn() {
+    if (this.isMyTurn) {
+      this.promptText.text = "Your Turn 🙌";
+    } else {
+      this.promptText.text = "Their Turn　🤔🤔🤔";
+    }
   }
 
-  private handleStageClick = () => {
-    if (this.isCardSelectionValid()) {
-      this.playButton.enable();
+  private updateActionButton() {
+    if (this.isMyTurn) {
+      if (this.isCardSelectionValid()) {
+        this.actionButton.enable();
+        if (this.getSelectedCards().length === 0) {
+          this.actionButton.updateText("pass");
+        } else {
+          this.actionButton.updateText("play");
+        }
+      } else {
+        this.actionButton.disable();
+      }
     } else {
-      this.playButton.disable();
+      this.actionButton.disable();
     }
+  }
+
+  private isCardSelectionValid() {
+    const selectedCards = this.getSelectedCards();
+    return this.validator.isTransitionValid(this.getPrevCards(), selectedCards);
+  }
+
+  private getSelectedCards() {
+    return this.myCards.filter((card) => card.isSelected());
+  }
+
+  private getPrevCards() {
+    return this.playedCards[this.playedCards.length - 1] || [];
+  }
+
+  private handlePointerDown = () => {
+    if (!this.isMyTurn) return;
+    this.updateActionButton();
   };
 
   private draw() {
-    this.drawSubmitButton();
-    this.drawPassButton();
-    this.drawTurnText();
+    this.addChild(this.actionButton);
+    this.addChild(this.promptText);
   }
 
-  private drawSubmitButton() {
-    this.playButton = new Button("play");
-    this.playButton.disable();
-    this.playButton.x = 400;
-    this.playButton.y = 400;
-    this.addChild(this.playButton);
+  private drawMyCards() {
+    this.addChild(...this.myCards);
   }
 
-  private drawPassButton() {
-    this.passButton = new Button("pass");
-    this.passButton.x = 700;
-    this.passButton.y = 400;
-    this.addChild(this.passButton);
-  }
+  private layoutMyCards() {
+    const circleRadius = 700;
+    const circleCenterX = Application.WIDTH / 2;
+    const circleCenterY = Application.HEIGHT + circleRadius - 100;
 
-  private drawTurnText() {
-    this.turnText = new Text("", {
-      fill: Color.WHITE,
-    });
-    this.turnText.x = 100;
-    this.addChild(this.turnText);
-  }
-
-  private drawCards() {
-    const circleRadius = 800;
-    const circleCenterX = 640;
-    const circleCenterY = 720 + circleRadius - 100;
-
-    for (let i = 0; i < this.cards.length; i++) {
-      const card = this.cards[i];
-      const startRadian = (-Math.PI / 64) * (this.cards.length / 2);
+    for (let i = 0; i < this.myCards.length; i++) {
+      const card = this.myCards[i];
+      const startRadian = (-Math.PI / 64) * (this.myCards.length / 2);
       const endRadian = -startRadian;
-      const step = (endRadian - startRadian) / this.cards.length;
+      const step = (endRadian - startRadian) / this.myCards.length;
       const radian = startRadian + step * i;
       card.rotation = radian;
       card.x = circleCenterX + circleRadius * Math.sin(radian);
       card.y = circleCenterY - circleRadius * Math.cos(radian);
-      this.addChild(card);
     }
   }
 
-  private undrawCards() {
-    this.cards.forEach((card) => this.removeChild(card));
+  private disableMyCardsInteraction() {
+    this.myCards.forEach((card) => (card.interactive = false));
   }
 
-  private drawLastCards() {
-    for (let i = 0; i < this.lastCards.length; i++) {
-      const card = this.lastCards[i];
-      card.rotation = 0;
-      card.x = 500 + i * 30;
-      card.y = 250;
-      this.addChild(card);
-    }
-  }
-
-  private undrawLastCards() {
-    this.lastCards.forEach((card) => this.removeChild(card));
-  }
-
-  private updateTurnText() {
-    if (this.isMyTurn) {
-      this.turnText.text = "Your Turn 🙌";
-    } else {
-      this.turnText.text = "Their Turn　🤔🤔🤔";
-    }
-  }
-
-  private disableCardInteraction() {
-    this.cards.forEach((card) => (card.interactive = false));
-  }
-
-  private enableCardInteraction() {
-    this.cards.forEach((card) => (card.interactive = true));
+  private enableMyCardsInteraction() {
+    this.myCards.forEach((card) => (card.interactive = true));
   }
 }
 

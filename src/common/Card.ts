@@ -3,6 +3,7 @@ export enum CardSuit {
   Heart = "Hearts",
   Diamond = "Diamonds",
   Club = "Clubs",
+  Joker = "Joker",
 }
 
 export enum CardValue {
@@ -19,6 +20,7 @@ export enum CardValue {
   Queen = "Q",
   King = "K",
   Ace = "A",
+  Joker = "",
 }
 
 export interface CardJson {

@@ -1,6 +1,8 @@
 import * as PIXI from "pixi.js";
 import { sound } from "@pixi/sound";
 import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
+import Texture from "./Texture";
+import Sound from "./Sound";
 
 class Card extends PIXI.Sprite {
   private static readonly WIDTH = 140;
@@ -24,6 +26,9 @@ class Card extends PIXI.Sprite {
   }
 
   public static comparator(a: Card, b: Card): number {
+    if (a.isJoker() && b.isJoker()) return 0;
+    if (a.isJoker()) return 1;
+    if (b.isJoker()) return -1;
     const aCardValueNumber = CardValueUtil.toNumber(a.value);
     const bCardValueNumber = CardValueUtil.toNumber(b.value);
     if (aCardValueNumber > bCardValueNumber) return 1;
@@ -62,7 +67,7 @@ class Card extends PIXI.Sprite {
   private handlePointerDown = () => {
     this.y += Card.SELECTED_OFFSET_Y * (this.selected ? 1 : -1);
     this.selected = !this.selected;
-    sound.play("cardSlide1.ogg");
+    Sound.play("cardSlide1.ogg");
   };
 
   public deselect() {
@@ -73,9 +78,7 @@ class Card extends PIXI.Sprite {
   }
 
   private draw() {
-    const loader = PIXI.Loader.shared;
-    this.texture =
-      loader.resources[`card${this.suit}${this.value}.png`].texture;
+    this.texture = Texture.from(`card${this.suit}${this.value}.png`);
   }
 
   public static fromJson(json: CardJson) {
@@ -99,6 +102,10 @@ class Card extends PIXI.Sprite {
 
   public getSuit() {
     return this.suit;
+  }
+
+  public isJoker() {
+    return this.suit === CardSuit.Joker && this.value == CardValue.Joker;
   }
 }
 
