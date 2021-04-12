@@ -1,5 +1,4 @@
 import * as PIXI from "pixi.js";
-import PIXISound from "pixi-sound";
 import Button from "./Button";
 import Card from "./Card";
 import Color from "./Color";
@@ -254,6 +253,13 @@ class TycoonViewController extends ViewController {
   private handleSocketInit = ({ cardJsons, isMyTurn }) => {
     this.isMyTurn = isMyTurn;
     this.myCards = cardJsons.map((json) => Card.fromJson(json));
+    this.myCards.forEach((card) => {
+      card.setCenterAsOrigin();
+      card.onSelect((selected: boolean) => {
+        card.y += 20 * (selected ? -1 : 1);
+        Sound.play("cardSlide1.ogg");
+      });
+    });
     this.myCards.sort(Card.comparator);
     this.drawMyCards();
     this.layoutMyCards();
@@ -335,11 +341,11 @@ class TycoonViewController extends ViewController {
   }
 
   private disableMyCardsInteraction() {
-    this.myCards.forEach((card) => (card.interactive = false));
+    this.myCards.forEach((card) => card.disableSelection());
   }
 
   private enableMyCardsInteraction() {
-    this.myCards.forEach((card) => (card.interactive = true));
+    this.myCards.forEach((card) => card.enableSelection());
   }
 }
 
