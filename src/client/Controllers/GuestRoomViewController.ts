@@ -1,10 +1,10 @@
-import { RoomJson } from "../server/Room";
-import Alert from "./Alert";
-import Application from "./Application";
-import Color from "./Color";
+import Alert from "../Alert";
+import Application from "../Application";
+import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
 import RoomViewController from "./RoomViewController";
-import Text from "./Text";
+import Text from "../Text";
+import { RoomJson } from "../../Common/Room";
 
 class GuestRoomViewController extends RoomViewController {
   private promptText: Text;

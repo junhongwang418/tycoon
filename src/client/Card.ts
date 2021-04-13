@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
+import { CardJson, CardSuit, CardValue, CardValueUtil } from "../Common/Card";
 import Color from "./Color";
 import Text from "./Text";
 import Container from "./Container";
@@ -53,33 +53,26 @@ class Card extends Container {
     frame.endFill();
     frame.interactive = true;
     frame.hitArea = new PIXI.Rectangle(0, 0, Card.WIDTH, Card.HEIGHT);
-    frame.on("pointerdown", () => {
-      this.selected = !this.selected;
-      this.handleSelect(this.selected);
-    });
+    frame.on("pointerdown", this.handleFramePointerDown);
     return frame;
   }
+
+  private handleFramePointerDown = () => {
+    this.selected = !this.selected;
+    this.handleSelect(this.selected);
+  };
 
   private layoutFrame() {
     this.frame.x = Card.FRAME_X;
     this.frame.y = Card.FRAME_Y;
   }
 
-  public static comparator(a: Card, b: Card): number {
-    if (a.isJoker() && b.isJoker()) return 0;
-    if (a.isJoker()) return 1;
-    if (b.isJoker()) return -1;
-    const aCardValueNumber = CardValueUtil.toNumber(a.value);
-    const bCardValueNumber = CardValueUtil.toNumber(b.value);
-    if (aCardValueNumber > bCardValueNumber) return 1;
-    if (aCardValueNumber < bCardValueNumber) return -1;
-    return a.suit.toString().localeCompare(b.suit.toString());
+  public greaterThan(other: Card): boolean {
+    return CardValueUtil.greaterThan(this.value, other.value);
   }
 
-  public greaterThan(other: Card): boolean {
-    const cardValueNumber = CardValueUtil.toNumber(this.value);
-    const otherCardValueNumber = CardValueUtil.toNumber(other.value);
-    return cardValueNumber > otherCardValueNumber;
+  public lessThan(other: Card): boolean {
+    return CardValueUtil.lessThan(this.value, other.value);
   }
 
   public onSelect(cb: (selected: boolean) => void) {

@@ -1,100 +1,29 @@
 import * as PIXI from "pixi.js";
-import Button from "./Button";
-import Card from "./Card";
-import Color from "./Color";
-import Text from "./Text";
-import Validator from "./Validator";
-import Application from "./Application";
+import Button from "../Button";
+import Card from "../Card";
+import Color from "../Color";
+import Text from "../Text";
+import TycoonValidator from "../TycoonValidator";
+import Application from "../Application";
 import ViewController from "./ViewController";
-import RoomSelectionViewController from "./LobbyViewController";
-import Popup from "./Popup";
-import Sound from "./Sound";
-import { CardJson } from "../common/Card";
-import Container from "./Container";
-import { TycoonOptions } from "../common/Tycoon";
+import Sound from "../Sound";
+import { CardJson, CardValueUtil } from "../../Common/Card";
+import {
+  DEFAULT_TYCOON_STATE,
+  TycoonOptions,
+  TycoonState,
+} from "../../Common/Tycoon";
 import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
-import Alert from "./Alert";
-
-class AlertView extends Container {
-  private static get WIDTH() {
-    return (Application.WIDTH * 2) / 3;
-  }
-
-  private static get HEIGHT() {
-    return (Application.HEIGHT * 2) / 3;
-  }
-
-  private handleOk = () => {};
-
-  private frame: PIXI.Graphics;
-  private messageText: Text;
-  private okButton: Button;
-
-  constructor(text: string) {
-    super();
-    this.frame = this.createFrame();
-    this.messageText = new Text(text, { fill: Color.WHITE });
-    this.okButton = this.createOkButton();
-    this.layout();
-    this.draw();
-  }
-
-  private draw() {
-    this.addChild(this.frame);
-    this.addChild(this.messageText);
-    this.addChild(this.okButton);
-  }
-
-  private layout() {
-    this.layoutFrame();
-    this.layoutMessageText();
-    this.layoutOkButton();
-  }
-
-  private layoutFrame() {
-    this.frame.x = (Application.WIDTH - this.frame.width) / 2;
-    this.frame.y = (Application.HEIGHT - this.frame.height) / 2;
-  }
-
-  private layoutOkButton() {
-    this.okButton.setCenterAsOrigin();
-    this.okButton.x = Application.WIDTH / 2;
-    this.okButton.y = Application.HEIGHT / 2 + Application.spacing(5);
-  }
-
-  private createOkButton() {
-    const button = new Button("ok");
-    button.onPointerDown(() => this.handleOk());
-    return button;
-  }
-
-  private layoutMessageText() {
-    this.messageText.anchor.set(0.5);
-    this.messageText.x = Application.WIDTH / 2;
-    this.messageText.y = Application.HEIGHT / 2 - Application.spacing(5);
-  }
-
-  private createFrame() {
-    const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.WHITE);
-    frame.beginFill(Color.BLACK);
-    frame.drawRect(0, 0, AlertView.WIDTH, AlertView.HEIGHT);
-    frame.endFill();
-    return frame;
-  }
-
-  public onOk(cb: () => void) {
-    this.handleOk = cb;
-  }
-}
+import Alert from "../Alert";
 
 class TycoonViewController extends ViewController {
   private myCards: Card[];
   private playedCards: Card[][];
 
   private isMyTurn: boolean;
-  private validator: Validator;
+  private tycoonValidator: TycoonValidator;
+  private tycoonState: TycoonState;
 
   private promptText: Text;
   private actionButton: Button;
@@ -108,7 +37,8 @@ class TycoonViewController extends ViewController {
     this.isMyTurn = false;
     this.myCards = [];
     this.playedCards = [];
-    this.validator = new Validator(tycoonOptions);
+    this.tycoonValidator = new TycoonValidator(tycoonOptions);
+    this.tycoonState = DEFAULT_TYCOON_STATE;
     this.promptText = new Text("", { fill: Color.WHITE });
     this.actionButton = this.createActionButton();
     this.hostLeftRoomAlert = new Alert("The host left the game :(");
@@ -157,23 +87,25 @@ class TycoonViewController extends ViewController {
     socket.on("init-success", this.handleSocketInitSuccess);
     socket.on("update", this.handleSocketUpdate);
     socket.on("lose", this.handleSocketLose);
-
-    socket.on("host-left-room", () => {
-      this.hostLeftRoomAlert.onOkButtonPointerDown(() => {
-        this.loadViewController(new LobbyViewController());
-      });
-      this.addChild(this.hostLeftRoomAlert);
-    });
-
-    socket.on("guest-left-game", (roomId: string) => {
-      this.guestLeftRoomAlert.onOkButtonPointerDown(() => {
-        this.loadViewController(new HostRoomViewController(roomId));
-      });
-      this.addChild(this.guestLeftRoomAlert);
-    });
+    socket.on("host-left-game", this.handleHostLeftGame);
+    socket.on("guest-left-game", this.handleGuestLeftGame);
 
     socket.emit("init");
   }
+
+  private handleHostLeftGame = () => {
+    this.hostLeftRoomAlert.onOkButtonPointerDown(() => {
+      this.loadViewController(new LobbyViewController());
+    });
+    this.addChild(this.hostLeftRoomAlert);
+  };
+
+  private handleGuestLeftGame = (roomId: string) => {
+    this.guestLeftRoomAlert.onOkButtonPointerDown(() => {
+      this.loadViewController(new HostRoomViewController(roomId));
+    });
+    this.addChild(this.guestLeftRoomAlert);
+  };
 
   private handleSocketInitSuccess = (data: {
     cardJsons: CardJson[];
@@ -189,7 +121,13 @@ class TycoonViewController extends ViewController {
         Sound.play("cardSlide1.ogg");
       });
     });
-    this.myCards.sort(Card.comparator);
+    this.myCards.sort((a, b) => {
+      const aValue = a.getValue();
+      const bValue = b.getValue();
+      if (aValue === bValue) return 0;
+      if (CardValueUtil.greaterThan(aValue, bValue)) return 1;
+      return -1;
+    });
     this.drawMyCards();
     this.layoutMyCards();
     this.updatePromptTextBasedOnMyTurn();
@@ -207,7 +145,8 @@ class TycoonViewController extends ViewController {
     socket.off("init", this.handleSocketInitSuccess);
     socket.off("update", this.handleSocketUpdate);
     socket.off("lose", this.handleSocketLose);
-    socket.off("leave", this.handleSocketLeave);
+    socket.off("host-left-game", this.handleHostLeftGame);
+    socket.off("guest-left-game", this.handleGuestLeftGame);
   }
 
   private handleActionButtonPointerDown = () => {
@@ -255,19 +194,6 @@ class TycoonViewController extends ViewController {
       card.x = Application.WIDTH / 2 + i * 30;
       card.y = Application.HEIGHT / 2 - card.height / 2;
     }
-  }
-
-  private handleSocketLeave = () => {
-    this.drawForceQuitPopup();
-  };
-
-  private drawForceQuitPopup() {
-    const alert = new AlertView("The other player left the game :(");
-    const popup = new Popup(alert);
-    this.addChild(popup);
-    alert.onOk(() => {
-      this.loadViewController(new RoomSelectionViewController());
-    });
   }
 
   private handleSocketLose = () => {
@@ -322,7 +248,10 @@ class TycoonViewController extends ViewController {
 
   private isCardSelectionValid() {
     const selectedCards = this.getSelectedCards();
-    return this.validator.isTransitionValid(this.getPrevCards(), selectedCards);
+    return this.tycoonValidator
+      .withPrevCards(this.getPrevCards())
+      .withState(this.tycoonState)
+      .validateNextCards(selectedCards);
   }
 
   private getSelectedCards() {

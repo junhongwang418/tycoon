@@ -1,4 +1,4 @@
-import { CardSuit, CardValue } from "./Card";
+import { CardSuit, CardValue, CardValueUtil } from "./Card";
 
 export enum TycoonOptionKey {
   Revolution = "revolution",
@@ -43,3 +43,10 @@ export interface TycoonState {
   [TycoonStateKey.Sequence]: CardValue;
   [TycoonStateKey.Tight]: CardSuit[];
 }
+
+export const DEFAULT_TYCOON_STATE: TycoonState = {
+  [TycoonStateKey.Revolution]: false,
+  [TycoonStateKey.ElevenBack]: false,
+  [TycoonStateKey.Sequence]: null,
+  [TycoonStateKey.Tight]: [],
+};

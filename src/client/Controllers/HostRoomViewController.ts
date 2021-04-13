@@ -1,13 +1,13 @@
-import Application from "./Application";
-import Button from "./Button";
-import Color from "./Color";
-import Text from "./Text";
-import { RoomJson } from "../server/Room";
+import Application from "../Application";
+import Button from "../Button";
+import Color from "../Color";
+import Text from "../Text";
 import * as PIXI from "pixi.js";
-import CheckMark from "./CheckMark";
-import { TycoonOptionKey } from "../common/Tycoon";
-import Popup from "./Popup";
+import CheckMark from "../CheckMark";
+import { TycoonOptionKey } from "../../Common/Tycoon";
+import Popup from "../Popup";
 import RoomViewController from "./RoomViewController";
+import { RoomJson } from "../../Common/Room";
 
 class TycoonOptionsEditor extends Popup {
   private static get WIDTH() {

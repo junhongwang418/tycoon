@@ -1,11 +1,11 @@
 import * as PIXI from "pixi.js";
-import Color from "./Color";
+import Color from "../Color";
 import MenuViewController from "./MenuViewController";
-import Text from "./Text";
+import Text from "../Text";
 import ViewController from "./ViewController";
-import Application from "./Application";
-import Texture from "./Texture";
-import Sound from "./Sound";
+import Application from "../Application";
+import Texture from "../Texture";
+import Sound from "../Sound";
 
 class LoadingViewController extends ViewController {
   private loadingText: Text;

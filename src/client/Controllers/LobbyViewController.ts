@@ -1,12 +1,12 @@
 import * as PIXI from "pixi.js";
-import Application from "./Application";
-import Color from "./Color";
-import Text from "./Text";
+import Application from "../Application";
+import Color from "../Color";
+import Text from "../Text";
 import ViewController from "./ViewController";
-import Button from "./Button";
+import Button from "../Button";
 import HostRoomViewController from "./HostRoomViewController";
-import Popup from "./Popup";
-import Container from "./Container";
+import Popup from "../Popup";
+import Container from "../Container";
 import GuestRoomViewController from "./GuestRoomViewController";
 
 class TextField extends Container {

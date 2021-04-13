@@ -1,4 +1,4 @@
-import { CardValue, CardSuit, CardJson } from "../common/Card";
+import { CardValue, CardSuit, CardJson } from "../Common/Card";
 
 class Card {
   public readonly value: CardValue;
@@ -18,10 +18,6 @@ class Card {
 
   public static fromJson(json: CardJson) {
     return new Card(json.value, json.suit);
-  }
-
-  public equals(card: Card) {
-    return this.value === card.value && this.suit === card.suit;
   }
 }
 

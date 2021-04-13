@@ -1,6 +1,6 @@
-import { CardSuit, CardValue } from "../common/Card";
+import { CardSuit, CardValue } from "../Common/Card";
 import Card from "./Card";
-import Algorithm from "../common/Algorithm";
+import Algorithm from "../Common/Algorithm";
 
 class CardDeck {
   private static readonly NUM_JOKERS = 2;

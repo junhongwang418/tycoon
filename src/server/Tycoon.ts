@@ -1,6 +1,6 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
-import { TycoonOptions } from "../common/Tycoon";
+import { TycoonOptions } from "../Common/Tycoon";
 
 class Tycoon {
   private player1Socket: Socket;

@@ -1,8 +1,8 @@
-import Application from "./Application";
-import Button from "./Button";
-import Color from "./Color";
+import Application from "../Application";
+import Button from "../Button";
+import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
-import Text from "./Text";
+import Text from "../Text";
 import ViewController from "./ViewController";
 
 class MenuViewController extends ViewController {

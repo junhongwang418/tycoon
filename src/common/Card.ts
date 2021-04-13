@@ -1,9 +1,9 @@
 export enum CardSuit {
-  Spade = "Spades",
-  Heart = "Hearts",
-  Diamond = "Diamonds",
-  Club = "Clubs",
-  Joker = "Joker",
+  Spade = "Spade",
+  Heart = "Heart",
+  Diamond = "Diamond",
+  Club = "Club",
+  Joker = "",
 }
 
 export enum CardValue {
@@ -29,8 +29,39 @@ export interface CardJson {
 }
 
 export class CardValueUtil {
-  public static toNumber(cardValue: CardValue) {
+  public static greaterThan(a: CardValue, b: CardValue): boolean {
+    if (a === CardValue.Joker && b === CardValue.Joker) return false;
+    if (a === CardValue.Joker) return true;
+    if (b === CardValue.Joker) return false;
+
+    const aNumber = CardValueUtil.toVirtualNumber(a);
+    const bNumber = CardValueUtil.toVirtualNumber(b);
+
+    return aNumber > bNumber;
+  }
+  public static lessThan(a: CardValue, b: CardValue): boolean {
+    if (a === CardValue.Joker && b === CardValue.Joker) return false;
+    if (a === CardValue.Joker) return true;
+    if (b === CardValue.Joker) return false;
+
+    const aNumber = CardValueUtil.toVirtualNumber(a);
+    const bNumber = CardValueUtil.toVirtualNumber(b);
+
+    return aNumber < bNumber;
+  }
+
+  private static toVirtualNumber(cardValue: CardValue) {
+    if (cardValue === CardValue.Ace) return 14;
+    if (cardValue === CardValue.Two) return 15;
+    return CardValueUtil.toNumber(cardValue);
+  }
+
+  private static toNumber(cardValue: CardValue) {
     switch (cardValue) {
+      case CardValue.Ace:
+        return 1;
+      case CardValue.Two:
+        return 2;
       case CardValue.Three:
         return 3;
       case CardValue.Four:
@@ -53,12 +84,8 @@ export class CardValueUtil {
         return 12;
       case CardValue.King:
         return 13;
-      case CardValue.Ace:
-        return 14;
-      case CardValue.Two:
-        return 15;
       default:
-        return 0;
+        return null;
     }
   }
 }

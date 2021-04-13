@@ -20,4 +20,4 @@ Coming Soon
 ## 📚 Resources
 
 - [Wikipedia](https://en.wikipedia.org/wiki/Daifug%C5%8D)
-- [Game Asset](https://www.kenney.nl/assets/boardgame-pack)
+- [Card Emojis](https://www.emojibase.com/emojilist/card)

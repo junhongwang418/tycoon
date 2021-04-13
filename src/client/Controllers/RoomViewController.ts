@@ -1,18 +1,18 @@
-import Application from "./Application";
-import Button from "./Button";
-import Color from "./Color";
+import Application from "../Application";
+import Button from "../Button";
+import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
-import Text from "./Text";
+import Text from "../Text";
 import ViewController from "./ViewController";
-import { RoomJson } from "../server/Room";
-import Container from "./Container";
+import Container from "../Container";
 import * as PIXI from "pixi.js";
 import {
   TycoonOptionKey,
   TycoonOptions,
   DEFAULT_TYCOON_OPTIONS,
-} from "../common/Tycoon";
+} from "../../Common/Tycoon";
 import TycoonViewController from "./TycoonViewController";
+import { RoomJson } from "../../Common/Room";
 
 class TycoonOptionsView extends Container {
   private tycoonOptions: TycoonOptions;

@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import Application from "./Application";
+import Application from "../Application";
 
 abstract class ViewController extends PIXI.Container {
   protected loadViewController(vc: ViewController) {

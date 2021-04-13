@@ -1,15 +1,8 @@
-import e from "express";
 import { Socket } from "socket.io";
-import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../common/Tycoon";
+import { RoomJson } from "../Common/Room";
+import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../Common/Tycoon";
 import Lobby from "./Lobby";
 import Tycoon from "./Tycoon";
-
-export interface RoomJson {
-  id: string;
-  numSockets: number;
-  capacity: number;
-  options: TycoonOptions;
-}
 
 class Room {
   public static readonly ID_LENGTH = 5;
@@ -61,7 +54,7 @@ class Room {
         Object.values(this.guests).forEach((guest) => {
           this.removeSocket(guest);
           Lobby.shared.addSocket(guest);
-          guest.emit("host-left-room");
+          guest.emit("host-left-game");
         });
         Lobby.shared.removeRoom(this.id);
       } else {
