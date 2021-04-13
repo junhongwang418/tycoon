@@ -4,7 +4,7 @@ import Texture from "./Texture";
 
 class CheckMark extends PIXI.Sprite {
   private checked: boolean;
-  private handleClick = (checked: boolean) => {};
+  private handlePointerDown = (checked: boolean) => {};
 
   constructor() {
     super(Texture.from("grey_box.png"));
@@ -12,7 +12,7 @@ class CheckMark extends PIXI.Sprite {
     this.checked = false;
     this.on("pointerdown", () => {
       this.checked = !this.checked;
-      this.handleClick(this.checked);
+      this.handlePointerDown(this.checked);
       if (this.checked) {
         this.texture = Texture.from("green_boxCheckmark.png");
       } else {
@@ -22,8 +22,8 @@ class CheckMark extends PIXI.Sprite {
     });
   }
 
-  public onClick(cb: (checked: boolean) => void) {
-    this.handleClick = cb;
+  public onPointerDown(cb: (checked: boolean) => void) {
+    this.handlePointerDown = cb;
   }
 }
 

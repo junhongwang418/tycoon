@@ -1,141 +1,130 @@
+import e from "express";
 import { Socket } from "socket.io";
-import { TycoonOptions } from "../common/Tycoon";
+import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../common/Tycoon";
 import Lobby from "./Lobby";
 import Tycoon from "./Tycoon";
 
 export interface RoomJson {
-  index: number;
-  numPlayers: number;
+  id: string;
+  numSockets: number;
   capacity: number;
   options: TycoonOptions;
 }
 
 class Room {
+  public static readonly ID_LENGTH = 5;
   private static readonly CAPACITY = 2;
 
-  private sockets: Socket[];
-  private readySet: Set<string>;
-  private index: number;
+  private id: string;
+  private host: Socket;
+  private guests: { [id: string]: Socket };
 
   private tycoon: Tycoon;
   private tycoonOptions: TycoonOptions;
 
-  constructor(index: number) {
-    this.index = index;
-    this.sockets = [];
-    this.readySet = new Set();
+  constructor(id: string) {
+    this.id = id;
+    this.guests = {};
     this.tycoon = null;
-    this.tycoonOptions = {
-      revolution: false,
-      eightStop: false,
-      sequence: false,
-      tight: false,
-      threeSpadeReversal: false,
-      threeClubsStart: false,
-      elevenBack: false,
-    };
-    this.broadcastStatusEverySecond();
+    this.tycoonOptions = DEFAULT_TYCOON_OPTIONS;
   }
 
   public addSocket(socket: Socket) {
     if (this.isFull()) return;
 
-    this.sockets.push(socket);
-
-    socket.emit("enter-room");
+    // first socket is host
+    if (this.host == null) {
+      this.host = socket;
+    } else {
+      this.guests[socket.id] = socket;
+    }
 
     socket.on("leave-room", () => {
       this.removeSocket(socket);
       Lobby.shared.addSocket(socket);
-    });
-    socket.on("disconnect", () => {
-      this.removeSocket(socket);
 
-      if (this.tycoon) {
-        this.sockets.forEach((socket) => {
-          socket.emit("leave");
-          this.removeSocket(socket);
-          Lobby.shared.addSocket(socket);
+      if (socket.id === this.host.id) {
+        Object.values(this.guests).forEach((guest) => {
+          this.removeSocket(guest);
+          Lobby.shared.addSocket(guest);
         });
-        this.sockets = [];
-        this.readySet.clear();
-        this.tycoon = null;
+        Lobby.shared.removeRoom(this.id);
+      } else {
+        this.broadcastRoomStatusUpdate();
       }
     });
 
-    socket.on("ready", () => {
-      this.readySet.add(socket.id);
+    socket.on("disconnect", () => {
+      this.removeSocket(socket);
 
-      if (this.readySet.size === 2) {
-        this.tycoon = new Tycoon(this.sockets[0], this.sockets[1]);
-        this.tycoon.start();
+      if (socket.id === this.host.id) {
+        Object.values(this.guests).forEach((guest) => {
+          this.removeSocket(guest);
+          Lobby.shared.addSocket(guest);
+          guest.emit("host-left-room");
+        });
+        Lobby.shared.removeRoom(this.id);
+      } else {
+        if (this.tycoon) {
+          this.host.emit("guest-left-game", this.id);
+        }
+        this.broadcastRoomStatusUpdate();
       }
     });
 
     socket.on("start", () => {
-      if (this.isFull()) {
-        this.sockets.forEach((socket) =>
-          socket.emit("start-game", this.tycoonOptions)
-        );
-      }
+      if (!this.isFull()) return;
+      this.getSockets().forEach((socket) => {
+        socket.emit("start-success", this.tycoonOptions);
+      });
+
+      this.tycoon = new Tycoon(this.host, Object.values(this.guests)[0]);
+      this.tycoon.start();
     });
 
-    socket.on("options-eleven-back", (checked: boolean) => {
-      this.tycoonOptions.elevenBack = checked;
+    socket.on("options-update", (tycoonOptions: TycoonOptions) => {
+      this.tycoonOptions = tycoonOptions;
+      Object.values(this.guests).forEach((guest) =>
+        guest.emit("room-status-update", this.toJson())
+      );
     });
 
-    socket.on("options-three-clubs-start", (checked: boolean) => {
-      this.tycoonOptions.threeClubsStart = checked;
-    });
-
-    socket.on("options-three-spade-reversal", (checked: boolean) => {
-      this.tycoonOptions.threeSpadeReversal = checked;
-    });
-
-    socket.on("options-tight", (checked: boolean) => {
-      this.tycoonOptions.tight = checked;
-    });
-
-    socket.on("options-sequence", (checked: boolean) => {
-      this.tycoonOptions.sequence = checked;
-    });
-
-    socket.on("options-revolution", (checked: boolean) => {
-      this.tycoonOptions.revolution = checked;
-    });
-
-    socket.on("options-eight-stop", (checked: boolean) => {
-      this.tycoonOptions.eightStop = checked;
-    });
+    this.broadcastRoomStatusUpdate();
   }
 
   public removeSocket(socket: Socket) {
-    this.sockets = this.sockets.filter((s) => s.id !== socket.id);
-    this.readySet.delete(socket.id);
     socket.removeAllListeners("leave-room");
-    socket.removeAllListeners("ready");
+    if (socket.id !== this.host.id) {
+      delete this.guests[socket.id];
+    }
+
+    // this.sockets = this.sockets.filter((s) => s.id !== socket.id);
+    // this.readySet.delete(socket.id);
+    // socket.removeAllListeners("leave-room");
+    // socket.removeAllListeners("ready");
   }
 
   public isFull() {
-    return this.sockets.length >= Room.CAPACITY;
+    return this.getSockets().length >= Room.CAPACITY;
   }
 
   public toJson(): RoomJson {
     return {
-      index: this.index,
-      numPlayers: this.sockets.length,
+      id: this.id,
+      numSockets: this.getSockets().length,
       capacity: Room.CAPACITY,
       options: this.tycoonOptions,
     };
   }
 
-  private broadcastStatusEverySecond() {
-    const oneSecondInMilliseonds = 1000;
-    setInterval(() => {
-      this.sockets.forEach((socket) => {
-        socket.emit("room-status", this.toJson());
-      });
-    }, oneSecondInMilliseonds);
+  private getSockets() {
+    return [this.host, ...Object.values(this.guests)];
+  }
+
+  private broadcastRoomStatusUpdate() {
+    this.getSockets().forEach((socket) => {
+      socket.emit("room-status-update", this.toJson());
+    });
   }
 }
 

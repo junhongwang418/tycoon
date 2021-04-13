@@ -11,6 +11,21 @@ class Algorithm {
       Algorithm.swap(arr, i, indexToSwap);
     }
   }
+
+  public static randomChar() {
+    const candidates =
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+    const index = Math.floor(Math.random() * candidates.length);
+    return candidates[index];
+  }
+
+  public static randomString(length: number) {
+    let res = "";
+    for (let i = 0; i < length; i++) {
+      res += Algorithm.randomChar();
+    }
+    return res;
+  }
 }
 
 export default Algorithm;

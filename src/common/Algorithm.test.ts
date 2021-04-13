@@ -17,3 +17,11 @@ describe("swap", () => {
 describe("shuffle", () => {
   // cannot seed Math.random()
 });
+
+describe("randomChar", () => {
+  // cannot seed Math.random()
+});
+
+describe("randomString", () => {
+  // cannot seed Math.random()
+});

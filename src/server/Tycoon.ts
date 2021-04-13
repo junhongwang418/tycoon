@@ -18,13 +18,18 @@ class Tycoon {
     const player1Cards = cardDeck.drawMany(16);
     const player2Cards = cardDeck.drawMany(16);
 
-    this.player1Socket.emit("init", {
-      cardJsons: player1Cards.map((card) => card.toJson()),
-      isMyTurn: true,
+    this.player1Socket.on("init", () => {
+      this.player1Socket.emit("init-success", {
+        cardJsons: player1Cards.map((card) => card.toJson()),
+        isMyTurn: true,
+      });
     });
-    this.player2Socket.emit("init", {
-      cardJsons: player2Cards.map((card) => card.toJson()),
-      isMyTurn: false,
+
+    this.player2Socket.on("init", () => {
+      this.player2Socket.emit("init-success", {
+        cardJsons: player2Cards.map((card) => card.toJson()),
+        isMyTurn: false,
+      });
     });
 
     this.player1Socket.on("action", (selectedCardJsons) => {

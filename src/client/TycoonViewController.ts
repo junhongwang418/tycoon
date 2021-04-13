@@ -12,8 +12,11 @@ import Sound from "./Sound";
 import { CardJson } from "../common/Card";
 import Container from "./Container";
 import { TycoonOptions } from "../common/Tycoon";
+import LobbyViewController from "./LobbyViewController";
+import HostRoomViewController from "./HostRoomViewController";
+import Alert from "./Alert";
 
-class Alert extends Container {
+class AlertView extends Container {
   private static get WIDTH() {
     return (Application.WIDTH * 2) / 3;
   }
@@ -76,7 +79,7 @@ class Alert extends Container {
     const frame = new PIXI.Graphics();
     frame.lineStyle(1, Color.WHITE);
     frame.beginFill(Color.BLACK);
-    frame.drawRect(0, 0, Alert.WIDTH, Alert.HEIGHT);
+    frame.drawRect(0, 0, AlertView.WIDTH, AlertView.HEIGHT);
     frame.endFill();
     return frame;
   }
@@ -96,6 +99,9 @@ class TycoonViewController extends ViewController {
   private promptText: Text;
   private actionButton: Button;
 
+  private hostLeftRoomAlert: Alert;
+  private guestLeftRoomAlert: Alert;
+
   constructor(tycoonOptions: TycoonOptions) {
     super();
 
@@ -105,11 +111,9 @@ class TycoonViewController extends ViewController {
     this.validator = new Validator(tycoonOptions);
     this.promptText = new Text("", { fill: Color.WHITE });
     this.actionButton = this.createActionButton();
-
-    this.layout();
-    this.draw();
+    this.hostLeftRoomAlert = new Alert("The host left the game :(");
+    this.guestLeftRoomAlert = new Alert("The guest left the game :(");
     this.enableInteraction();
-    this.addEventListeners();
   }
 
   private enableInteraction() {
@@ -129,7 +133,7 @@ class TycoonViewController extends ViewController {
     return button;
   }
 
-  private layout() {
+  protected layout() {
     this.layoutPromptText();
     this.layoutActionButton();
   }
@@ -143,18 +147,67 @@ class TycoonViewController extends ViewController {
   private layoutActionButton() {
     this.actionButton.setCenterAsOrigin();
     this.actionButton.x = Application.WIDTH / 2;
-    this.actionButton.y = Application.HEIGHT / 2 + Application.spacing(5);
+    this.actionButton.y = Application.HEIGHT / 2 + Application.spacing(10);
   }
 
-  private addEventListeners() {
+  protected addEventListeners() {
     this.on("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
-    socket.on("init", this.handleSocketInit);
+    socket.on("init-success", this.handleSocketInitSuccess);
     socket.on("update", this.handleSocketUpdate);
     socket.on("lose", this.handleSocketLose);
-    socket.on("leave", this.handleSocketLeave);
-    socket.emit("ready");
+
+    socket.on("host-left-room", () => {
+      this.hostLeftRoomAlert.onOkButtonPointerDown(() => {
+        this.loadViewController(new LobbyViewController());
+      });
+      this.addChild(this.hostLeftRoomAlert);
+    });
+
+    socket.on("guest-left-game", (roomId: string) => {
+      this.guestLeftRoomAlert.onOkButtonPointerDown(() => {
+        this.loadViewController(new HostRoomViewController(roomId));
+      });
+      this.addChild(this.guestLeftRoomAlert);
+    });
+
+    socket.emit("init");
+  }
+
+  private handleSocketInitSuccess = (data: {
+    cardJsons: CardJson[];
+    isMyTurn: boolean;
+  }) => {
+    const { cardJsons, isMyTurn } = data;
+    this.isMyTurn = isMyTurn;
+    this.myCards = cardJsons.map((json) => Card.fromJson(json));
+    this.myCards.forEach((card) => {
+      card.setCenterAsOrigin();
+      card.onSelect((selected: boolean) => {
+        card.y += 20 * (selected ? -1 : 1);
+        Sound.play("cardSlide1.ogg");
+      });
+    });
+    this.myCards.sort(Card.comparator);
+    this.drawMyCards();
+    this.layoutMyCards();
+    this.updatePromptTextBasedOnMyTurn();
+    this.updateActionButton();
+
+    if (!this.isMyTurn) {
+      this.disableMyCardsInteraction();
+    }
+  };
+
+  protected removeEventListeners() {
+    this.off("pointerdown", this.handlePointerDown);
+
+    const socket = Application.shared.socket;
+    socket.off("init", this.handleSocketInitSuccess);
+    socket.off("update", this.handleSocketUpdate);
+    socket.off("lose", this.handleSocketLose);
+    socket.off("leave", this.handleSocketLeave);
   }
 
   private handleActionButtonPointerDown = () => {
@@ -176,7 +229,7 @@ class TycoonViewController extends ViewController {
       selectedCards.forEach((card) => {
         this.removeChild(card);
         this.addChild(card);
-        card.interactive = false;
+        card.disableSelection();
       });
       this.layoutSelectedCards(selectedCards);
     }
@@ -208,16 +261,8 @@ class TycoonViewController extends ViewController {
     this.drawForceQuitPopup();
   };
 
-  protected cleanUp() {
-    const socket = Application.shared.socket;
-    socket.off("init", this.handleSocketInit);
-    socket.off("update", this.handleSocketUpdate);
-    socket.off("lose", this.handleSocketLose);
-    socket.off("leave", this.handleSocketLeave);
-  }
-
   private drawForceQuitPopup() {
-    const alert = new Alert("The other player left the game :(");
+    const alert = new AlertView("The other player left the game :(");
     const popup = new Popup(alert);
     this.addChild(popup);
     alert.onOk(() => {
@@ -248,27 +293,6 @@ class TycoonViewController extends ViewController {
     this.enableMyCardsInteraction();
     this.updatePromptTextBasedOnMyTurn();
     this.updateActionButton();
-  };
-
-  private handleSocketInit = ({ cardJsons, isMyTurn }) => {
-    this.isMyTurn = isMyTurn;
-    this.myCards = cardJsons.map((json) => Card.fromJson(json));
-    this.myCards.forEach((card) => {
-      card.setCenterAsOrigin();
-      card.onSelect((selected: boolean) => {
-        card.y += 20 * (selected ? -1 : 1);
-        Sound.play("cardSlide1.ogg");
-      });
-    });
-    this.myCards.sort(Card.comparator);
-    this.drawMyCards();
-    this.layoutMyCards();
-    this.updatePromptTextBasedOnMyTurn();
-    this.updateActionButton();
-
-    if (!this.isMyTurn) {
-      this.disableMyCardsInteraction();
-    }
   };
 
   private updatePromptTextBasedOnMyTurn() {
@@ -314,7 +338,7 @@ class TycoonViewController extends ViewController {
     this.updateActionButton();
   };
 
-  private draw() {
+  protected draw() {
     this.addChild(this.actionButton);
     this.addChild(this.promptText);
   }

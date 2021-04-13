@@ -15,11 +15,22 @@ class LoadingViewController extends ViewController {
     super();
     this.loadingText = new Text("Loading...", { fill: Color.WHITE });
     this.percentageText = new Text("", { fill: Color.WHITE });
-
     this.loadGameAssets();
-    this.layout();
-    this.draw();
   }
+
+  protected layout() {
+    this.layoutLoadingText();
+    this.layoutLoadingIndicator();
+  }
+
+  protected draw() {
+    this.addChild(this.loadingText);
+    this.addChild(this.percentageText);
+  }
+
+  protected addEventListeners() {}
+
+  protected removeEventListeners() {}
 
   private layoutLoadingText() {
     this.loadingText.anchor.set(0.5);
@@ -31,16 +42,6 @@ class LoadingViewController extends ViewController {
     this.percentageText.anchor.set(0.5);
     this.percentageText.x = Application.WIDTH / 2;
     this.percentageText.y = Application.HEIGHT / 2 + Application.spacing(4);
-  }
-
-  private layout() {
-    this.layoutLoadingText();
-    this.layoutLoadingIndicator();
-  }
-
-  private draw() {
-    this.addChild(this.loadingText);
-    this.addChild(this.percentageText);
   }
 
   private loadGameAssets() {

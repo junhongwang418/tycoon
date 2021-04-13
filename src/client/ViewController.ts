@@ -1,14 +1,27 @@
 import * as PIXI from "pixi.js";
 import Application from "./Application";
 
-class ViewController extends PIXI.Container {
+abstract class ViewController extends PIXI.Container {
   protected loadViewController(vc: ViewController) {
-    this.cleanUp();
+    this.removeEventListeners();
     Application.shared.removeViewController(this);
     Application.shared.addViewController(vc);
+    vc.init();
   }
 
-  protected cleanUp() {}
+  private init() {
+    this.layout();
+    this.draw();
+    this.addEventListeners();
+  }
+
+  protected abstract layout();
+
+  protected abstract draw();
+
+  protected abstract addEventListeners();
+
+  protected abstract removeEventListeners();
 }
 
 export default ViewController;

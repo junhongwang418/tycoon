@@ -6,36 +6,66 @@ import Text from "./Text";
 import ViewController from "./ViewController";
 
 class MenuViewController extends ViewController {
+  private titleText: Text;
+  private playButton: Button;
+  private howToPlayButton: Button;
+
   constructor() {
     super();
-    this.draw();
+    this.titleText = new Text("🃏 Tycoon 🃏", { fill: Color.WHITE });
+    this.playButton = this.createPlayButton();
+    this.howToPlayButton = this.createHowToPlayButton();
   }
 
-  private draw() {
-    this.drawTitleText();
-    this.drawPlayButton();
+  protected layout() {
+    this.layoutTitleText();
+    this.layoutPlayButton();
+    this.layoutHowToPlayButton();
   }
 
-  private drawTitleText() {
-    const text = new Text("🃏 Tycoon 🃏", { fill: Color.WHITE });
-    text.anchor.set(0.5);
-    text.x = Application.WIDTH / 2;
-    text.y = Application.HEIGHT / 2 - Application.spacing(4);
-    this.addChild(text);
+  protected draw() {
+    this.addChild(this.titleText);
+    this.addChild(this.playButton);
+    this.addChild(this.howToPlayButton);
   }
 
-  private drawPlayButton() {
-    const button = new Button("play");
-    button.setCenterAsOrigin();
-    button.x = Application.WIDTH / 2;
-    button.y = Application.HEIGHT / 2 + Application.spacing(4);
-    button.onPointerDown(this.handlePlayButtonClick);
-    this.addChild(button);
+  protected addEventListeners() {}
+
+  protected removeEventListeners() {}
+
+  private createPlayButton() {
+    const button = new Button("Play");
+    button.onPointerDown(this.handlePlayButtonPointerDown);
+    return button;
   }
 
-  private handlePlayButtonClick = () => {
+  private createHowToPlayButton() {
+    const button = new Button("How to Play");
+    button.disable();
+    return button;
+  }
+
+  private handlePlayButtonPointerDown = () => {
     this.loadViewController(new LobbyViewController());
   };
+
+  private layoutPlayButton() {
+    this.playButton.setCenterAsOrigin();
+    this.playButton.x = Application.WIDTH / 2;
+    this.playButton.y = Application.HEIGHT / 2 - Application.spacing(5);
+  }
+
+  private layoutHowToPlayButton() {
+    this.howToPlayButton.setCenterAsOrigin();
+    this.howToPlayButton.x = Application.WIDTH / 2;
+    this.howToPlayButton.y = Application.HEIGHT / 2 + Application.spacing(5);
+  }
+
+  private layoutTitleText() {
+    this.titleText.anchor.set(0.5);
+    this.titleText.x = Application.WIDTH / 2;
+    this.titleText.y = Application.HEIGHT / 4;
+  }
 }
 
 export default MenuViewController;

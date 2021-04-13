@@ -1,53 +1,60 @@
 import Room from "./Room";
 import { NUM_ROOMS } from "../common/Lobby";
 import { Socket } from "socket.io";
+import Algorithm from "../common/Algorithm";
 
 class Lobby {
-  private rooms: Room[];
-  private sockets: Socket[];
+  private rooms: { [id: string]: Room };
+  private sockets: { [id: string]: Socket };
 
   public static readonly shared = new Lobby();
 
   private constructor() {
-    this.rooms = this.createRooms();
-    this.sockets = [];
-    this.broadcastRoomStatusEverySecond();
+    this.rooms = {};
+    this.sockets = {};
   }
 
   public addSocket(socket: Socket) {
-    this.sockets.push(socket);
-    socket.on("enter-room", (roomIndex: number) => {
-      const room = this.rooms[roomIndex];
-      if (room.isFull()) {
-        console.log(`Room ${roomIndex} is already full`);
-      } else {
+    this.sockets[socket.id] = socket;
+
+    socket.on("create-room", () => {
+      const roomId = this.generateUniqueRoomId();
+      const room = new Room(roomId);
+      this.rooms[roomId] = room;
+      socket.emit("create-room-success", roomId);
+      this.removeSocket(socket);
+      room.addSocket(socket);
+    });
+
+    socket.on("join-room", (roomId: string) => {
+      const room = this.rooms[roomId];
+      if (room && !room.isFull()) {
+        socket.emit("join-room-success", roomId);
         this.removeSocket(socket);
         room.addSocket(socket);
       }
     });
+
+    socket.on("disconnect", () => {
+      this.removeSocket(socket);
+    });
   }
 
   private removeSocket(socket: Socket) {
-    this.sockets = this.sockets.filter((s) => s.id !== socket.id);
-    socket.removeAllListeners("enter-room");
+    socket.removeAllListeners("create-room");
+    delete this.sockets[socket.id];
   }
 
-  private createRooms() {
-    const rooms = [];
-    for (let i = 0; i < NUM_ROOMS; i++) {
-      rooms.push(new Room(i));
-    }
-    return rooms;
+  public removeRoom(roomId: string) {
+    delete this.rooms[roomId];
   }
 
-  private broadcastRoomStatusEverySecond() {
-    const oneSecondInMilliseonds = 1000;
-    setInterval(() => {
-      const roomJsons = this.rooms.map((room) => room.toJson());
-      this.sockets.forEach((socket) => {
-        socket.emit("rooms-status", roomJsons);
-      });
-    }, oneSecondInMilliseonds);
+  private generateUniqueRoomId() {
+    let roomId;
+    do {
+      roomId = Algorithm.randomString(Room.ID_LENGTH);
+    } while (this.rooms[roomId] != null);
+    return roomId;
   }
 }
 
