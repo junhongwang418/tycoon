@@ -12,6 +12,7 @@ import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
 import Alert from "../Alert";
 import Tycoon from "../Tycoon";
+import anime from "animejs";
 
 class TycoonViewController extends ViewController {
   private myCards: Card[];
@@ -186,9 +187,13 @@ class TycoonViewController extends ViewController {
   private layoutSelectedCards(cards: Card[]) {
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i];
-      card.rotation = Math.random() * Math.PI * 2;
-      card.x = Application.WIDTH / 2 + i * 30;
-      card.y = Application.HEIGHT / 2 - card.height / 2;
+      anime({
+        targets: card,
+        x: Application.WIDTH / 2 + Application.spacing(2) * i,
+        y: Application.HEIGHT / 2 - Application.spacing(10),
+        rotation: Math.random() * Math.PI * 2,
+        easing: "easeOutQuad",
+      });
     }
   }
 
@@ -200,7 +205,7 @@ class TycoonViewController extends ViewController {
 
   private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
     const theirSelectedCards = lastCardJsons.map((json) => Card.fromJson(json));
-    theirSelectedCards.forEach((card) => (card.interactive = false));
+    theirSelectedCards.forEach((card) => card.setCenterAsOrigin());
 
     this.tycoon.play(theirSelectedCards);
 

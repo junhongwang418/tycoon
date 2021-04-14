@@ -6,67 +6,8 @@ import ViewController from "./ViewController";
 import Button from "../Button";
 import HostRoomViewController from "./HostRoomViewController";
 import Popup from "../Popup";
-import Container from "../Container";
 import GuestRoomViewController from "./GuestRoomViewController";
-
-class TextField extends Container {
-  private maxLength: number;
-  private frame: PIXI.Graphics;
-  private value: string;
-  private valueText: Text;
-
-  constructor(maxLength: number) {
-    super();
-    this.maxLength = maxLength;
-    this.frame = this.createFrame();
-    this.value = "";
-    this.valueText = new Text("", { fill: Color.WHITE });
-
-    this.layout();
-    this.draw();
-
-    this.addEventListeners();
-  }
-
-  private layout() {}
-
-  private draw() {
-    this.addChild(this.frame);
-    this.addChild(this.valueText);
-  }
-
-  private createFrame() {
-    const frame = new PIXI.Graphics();
-    const text = new Text(" ".repeat(this.maxLength));
-    frame.lineStyle(1, Color.WHITE);
-    frame.beginFill(Color.BLACK);
-    frame.drawRect(0, 0, text.width, text.height);
-    frame.endFill();
-    return frame;
-  }
-
-  private addEventListeners() {
-    window.addEventListener("keydown", (e) => {
-      if (!e.repeat) {
-        if (e.key.length === 1) {
-          this.value += e.key;
-          this.value = this.value.slice(0, this.maxLength);
-        } else if (e.key === "Backspace") {
-          this.value = this.value.slice(0, -1);
-        }
-        this.updateValueText();
-      }
-    });
-  }
-
-  private updateValueText() {
-    this.valueText.text = this.value;
-  }
-
-  public getValue() {
-    return this.value;
-  }
-}
+import TextField from "../TextField";
 
 class JoinRoomPopup extends Popup {
   private static get WIDTH() {

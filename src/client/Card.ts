@@ -27,8 +27,9 @@ class Card extends Container {
     this.value = value;
     this.suit = suit;
     this.selected = false;
+
     this.text = new Text(Card.toText(value, suit), {
-      fill: Color.WHITE,
+      fill: Card.toColor(suit),
       fontSize: Card.FONT_SIZE,
     });
     this.frame = this.createFrame();
@@ -141,6 +142,21 @@ class Card extends Container {
     return "🂠";
   }
 
+  private static toColor(suit: CardSuit) {
+    switch (suit) {
+      case CardSuit.Spade:
+        return Color.BLUE;
+      case CardSuit.Heart:
+        return Color.RED;
+      case CardSuit.Diamond:
+        return Color.YELLOW;
+      case CardSuit.Club:
+        return Color.GREEN;
+      default:
+        return Color.WHITE;
+    }
+  }
+
   public static fromJson(json: CardJson) {
     return new Card(json.value, json.suit);
   }
@@ -178,6 +194,13 @@ class Card extends Container {
 
   public isThreeOfSpades() {
     return this.value === CardValue.Three && this.suit === CardSuit.Spade;
+  }
+
+  protected setCenterAsOriginBasedOnCurrentSize() {
+    this.pivot.set(
+      Card.FRAME_X + Card.WIDTH / 2,
+      Card.FRAME_Y + Card.HEIGHT / 2
+    );
   }
 }
 

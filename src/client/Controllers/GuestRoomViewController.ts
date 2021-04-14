@@ -13,6 +13,7 @@ class GuestRoomViewController extends RoomViewController {
   constructor(roomId: string) {
     super(roomId);
     this.promptText = new Text("Waiting for the host to start the game...", {
+      fontSize: 16,
       fill: Color.WHITE,
     });
     this.hostLeftRoomAlert = this.createHostLeftRoomAlert();
