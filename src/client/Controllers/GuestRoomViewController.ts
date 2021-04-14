@@ -4,7 +4,7 @@ import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
 import RoomViewController from "./RoomViewController";
 import Text from "../Text";
-import { RoomJson } from "../../Common/Room";
+import { RoomJson } from "../../common/Room";
 
 class GuestRoomViewController extends RoomViewController {
   private promptText: Text;

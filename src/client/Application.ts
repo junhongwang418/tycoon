@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
-import ViewController from "./Controllers/ViewController";
+import ViewController from "./controllers/ViewController";
 import io from "socket.io-client";
-import LoadingViewController from "./Controllers/LoadingViewController";
+import LoadingViewController from "./controllers/LoadingViewController";
 import WebFontLoader from "./WebFontLoader";
 
 class Application {

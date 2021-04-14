@@ -1,4 +1,4 @@
-import { CardSuit, CardValue, CardValueUtil } from "./Card";
+import { CardSuit } from "./Card";
 
 export enum TycoonOptionKey {
   Revolution = "revolution",

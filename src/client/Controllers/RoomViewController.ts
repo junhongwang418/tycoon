@@ -10,9 +10,9 @@ import {
   TycoonOptionKey,
   TycoonOptions,
   DEFAULT_TYCOON_OPTIONS,
-} from "../../Common/Tycoon";
+} from "../../common/Tycoon";
 import TycoonViewController from "./TycoonViewController";
-import { RoomJson } from "../../Common/Room";
+import { RoomJson } from "../../common/Room";
 
 class TycoonOptionsView extends Container {
   private tycoonOptions: TycoonOptions;

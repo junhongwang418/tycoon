@@ -1,4 +1,4 @@
-import { CardValue, CardSuit, CardJson } from "../Common/Card";
+import { CardValue, CardSuit, CardJson } from "../common/Card";
 
 class Card {
   public readonly value: CardValue;

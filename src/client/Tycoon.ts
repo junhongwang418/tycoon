@@ -1,11 +1,11 @@
-import { CardSuit, CardValue, CardValueUtil } from "../Common/Card";
+import { CardValue, CardValueUtil } from "../common/Card";
 import {
   DEFAULT_TYCOON_STATE,
   TycoonOptionKey,
   TycoonOptions,
   TycoonState,
   TycoonStateKey,
-} from "../Common/Tycoon";
+} from "../common/Tycoon";
 import Card from "./Card";
 
 class Tycoon {

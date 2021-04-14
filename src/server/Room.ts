@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
-import { RoomJson } from "../Common/Room";
-import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../Common/Tycoon";
+import { RoomJson } from "../common/Room";
+import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../common/Tycoon";
 import Lobby from "./Lobby";
 import Tycoon from "./Tycoon";
 

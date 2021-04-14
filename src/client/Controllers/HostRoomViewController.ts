@@ -4,10 +4,10 @@ import Color from "../Color";
 import Text from "../Text";
 import * as PIXI from "pixi.js";
 import CheckMark from "../CheckMark";
-import { TycoonOptionKey } from "../../Common/Tycoon";
+import { TycoonOptionKey } from "../../common/Tycoon";
 import Popup from "../Popup";
 import RoomViewController from "./RoomViewController";
-import { RoomJson } from "../../Common/Room";
+import { RoomJson } from "../../common/Room";
 
 class TycoonOptionsEditor extends Popup {
   private static get WIDTH() {

@@ -1,6 +1,5 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
-import { TycoonOptions } from "../Common/Tycoon";
 import Card from "./Card";
 
 class Tycoon {

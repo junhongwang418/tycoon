@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { CardJson, CardSuit, CardValue, CardValueUtil } from "../Common/Card";
+import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
 import Color from "./Color";
 import Text from "./Text";
 import Container from "./Container";

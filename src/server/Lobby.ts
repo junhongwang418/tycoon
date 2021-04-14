@@ -1,5 +1,4 @@
 import Room from "./Room";
-import { NUM_ROOMS } from "../Common/Lobby";
 import { Socket } from "socket.io";
 import Algorithm from "../Common/Algorithm";
 
