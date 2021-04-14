@@ -5,11 +5,11 @@ import Text from "../Text";
 import * as PIXI from "pixi.js";
 import CheckMark from "../CheckMark";
 import { TycoonOptionKey } from "../../common/Tycoon";
-import Popup from "../Popup";
+import Overlay from "../Overlay";
 import RoomViewController from "./RoomViewController";
 import { RoomJson } from "../../common/Room";
 
-class TycoonOptionsEditor extends Popup {
+class TycoonOptionsEditor extends Overlay {
   private static get WIDTH() {
     return (Application.WIDTH * 2) / 3;
   }
@@ -18,42 +18,46 @@ class TycoonOptionsEditor extends Popup {
   }
 
   private frame: PIXI.Graphics;
-  private crossButton: Button;
-
-  private optionTexts: Text[];
-  private optionCheckMarks: CheckMark[];
-
-  private handleClose = () => {};
-  private handleUpdate = (optionKey: TycoonOptionKey, checked: boolean) => {};
+  private closeButton: Button;
+  private tycoonOptionTexts: Text[];
+  private tycoonOptionCheckMarks: CheckMark[];
+  private handleCheckMarkPointerDown: (
+    optionKey: TycoonOptionKey,
+    checked: boolean
+  ) => void;
 
   constructor() {
     super();
 
-    const textStyle: Partial<PIXI.ITextStyle> = {
-      fill: Color.WHITE,
-      stroke: Color.BLACK,
-      strokeThickness: 3,
-    };
-
     this.frame = this.createFrame();
-    this.crossButton = this.createCrossButton();
-    this.optionTexts = [];
-    this.optionCheckMarks = [];
-
-    const optionKeys = Object.values(TycoonOptionKey);
-    optionKeys.forEach((optionKey) => {
-      this.optionTexts.push(new Text(optionKey.toString(), textStyle));
-
-      const checkMark = new CheckMark();
-      checkMark.onPointerDown((checked: boolean) => {
-        this.handleUpdate(optionKey, checked);
-      });
-
-      this.optionCheckMarks.push(checkMark);
-    });
+    this.closeButton = this.createCloseButton();
+    this.tycoonOptionTexts = this.createTycoonOptionTexts();
+    this.tycoonOptionCheckMarks = this.createTycoonOptionCheckMarks();
 
     this.layout();
     this.draw();
+  }
+
+  private createTycoonOptionTexts() {
+    const texts = [];
+    const optionKeys = Object.values(TycoonOptionKey);
+    optionKeys.forEach((optionKey) => {
+      texts.push(new Text(optionKey.toString(), { fill: Color.WHITE }));
+    });
+    return texts;
+  }
+
+  private createTycoonOptionCheckMarks() {
+    const checkMarks = [];
+    const optionKeys = Object.values(TycoonOptionKey);
+    optionKeys.forEach((optionKey) => {
+      const checkMark = new CheckMark({ fill: Color.WHITE, fontSize: 36 });
+      checkMark.onPointerDown((checked: boolean) => {
+        this.handleCheckMarkPointerDown(optionKey, checked);
+      });
+      checkMarks.push(checkMark);
+    });
+    return checkMarks;
   }
 
   private layout() {
@@ -63,14 +67,14 @@ class TycoonOptionsEditor extends Popup {
   }
 
   private layoutOptionTexts() {
-    this.optionTexts.forEach((text, index) => {
+    this.tycoonOptionTexts.forEach((text, index) => {
       text.x = Application.spacing(2);
       text.y = Application.spacing(4) + Application.spacing(5) * index;
     });
   }
 
   private layoutOptionCheckMarks() {
-    this.optionCheckMarks.forEach((checkMark, index) => {
+    this.tycoonOptionCheckMarks.forEach((checkMark, index) => {
       checkMark.x =
         TycoonOptionsEditor.WIDTH - checkMark.width - Application.spacing(2);
       checkMark.y = Application.spacing(4) + Application.spacing(5) * index;
@@ -79,9 +83,9 @@ class TycoonOptionsEditor extends Popup {
 
   private draw() {
     this.addChild(this.frame);
-    this.frame.addChild(this.crossButton);
-    this.frame.addChild(...this.optionTexts);
-    this.frame.addChild(...this.optionCheckMarks);
+    this.frame.addChild(this.closeButton);
+    this.frame.addChild(...this.tycoonOptionTexts);
+    this.frame.addChild(...this.tycoonOptionCheckMarks);
   }
 
   private layoutFrame() {
@@ -91,26 +95,25 @@ class TycoonOptionsEditor extends Popup {
 
   private createFrame() {
     const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.BLACK);
-    frame.beginFill(Color.GREEN, 0.96);
+    frame.lineStyle(1, Color.WHITE);
     frame.drawRect(0, 0, TycoonOptionsEditor.WIDTH, TycoonOptionsEditor.HEIGHT);
     frame.endFill();
     return frame;
   }
 
-  private createCrossButton() {
+  private createCloseButton() {
     const button = new Button("❌");
     button.setCenterAsOrigin();
-    button.on("click", () => this.handleClose());
+    button.on("pointerdown", this.handleCloseButtonPointerDown.bind(this));
     return button;
   }
 
-  public onClose(cb: () => void) {
-    this.handleClose = cb;
+  private handleCloseButtonPointerDown() {
+    this.parent.removeChild(this);
   }
 
   public onUpdate(cb: (optionKey: TycoonOptionKey, checked: boolean) => void) {
-    this.handleUpdate = cb;
+    this.handleCheckMarkPointerDown = cb;
   }
 }
 
@@ -134,8 +137,8 @@ class HostRoomViewController extends RoomViewController {
 
   protected draw() {
     super.draw();
-    this.drawStartButton();
-    this.drawSettingsButton();
+    this.addChild(this.startButton);
+    this.addChild(this.settingsButton);
   }
 
   protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
@@ -145,20 +148,22 @@ class HostRoomViewController extends RoomViewController {
 
   private createTycoonOptionsEditor() {
     const editor = new TycoonOptionsEditor();
-    editor.onClose(() => {
-      this.removeChild(editor);
-    });
-    editor.onUpdate((optionKey, checked) => {
-      this.tycoonOptions[optionKey] = checked;
-      this.tycoonOptionsText.setTycoonOptions(this.tycoonOptions);
-      const socket = Application.shared.socket;
-      socket.emit("options-update", this.tycoonOptions);
-    });
+    editor.onUpdate(this.handleTycoonOptionsEditorUpdate.bind(this));
     return editor;
   }
 
+  private handleTycoonOptionsEditorUpdate(
+    optionKey: TycoonOptionKey,
+    checked: boolean
+  ) {
+    this.tycoonOptions[optionKey] = checked;
+    this.tycoonOptionsView.setTycoonOptions(this.tycoonOptions);
+    const socket = Application.shared.socket;
+    socket.emit("options-update", this.tycoonOptions);
+  }
+
   private updateStartButton() {
-    if (this.numPeople === this.roomCapacity) {
+    if (this.roomNumPlayers === this.roomCapacity) {
       this.startButton.enable();
     } else {
       this.startButton.disable();
@@ -167,20 +172,24 @@ class HostRoomViewController extends RoomViewController {
 
   private createSettingsButton() {
     const button = new Button("⚙️");
-    button.onPointerDown(() => {
-      this.addChild(this.tycoonOptionsEditor);
-    });
+    button.onPointerDown(this.handleSettingsButtonPointerDown.bind(this));
     return button;
+  }
+
+  private handleSettingsButtonPointerDown() {
+    this.addChild(this.tycoonOptionsEditor);
   }
 
   private createStartButton() {
     const button = new Button("start ▶");
     button.disable();
-    button.onPointerDown(() => {
-      const socket = Application.shared.socket;
-      socket.emit("start");
-    });
+    button.onPointerDown(this.handleStartButtonPointerDown.bind(this));
     return button;
+  }
+
+  private handleStartButtonPointerDown() {
+    const socket = Application.shared.socket;
+    socket.emit("start");
   }
 
   private layoutSettingsButton() {
@@ -194,14 +203,6 @@ class HostRoomViewController extends RoomViewController {
       Application.WIDTH - this.startButton.width - Application.spacing(3);
     this.startButton.y =
       Application.HEIGHT - this.startButton.height - Application.spacing(3);
-  }
-
-  private drawSettingsButton() {
-    this.addChild(this.settingsButton);
-  }
-
-  private drawStartButton() {
-    this.addChild(this.startButton);
   }
 }
 

@@ -3,7 +3,7 @@ import Application from "./Application";
 import Color from "./Color";
 import Container from "./Container";
 
-class Popup extends Container {
+class Overlay extends Container {
   private static readonly BACKGROUND_ALPHA = 0.92;
   private interactionWall: PIXI.Graphics;
 
@@ -15,7 +15,7 @@ class Popup extends Container {
 
   private createInteractionWall() {
     const frame = new PIXI.Graphics();
-    frame.beginFill(Color.BLACK, Popup.BACKGROUND_ALPHA);
+    frame.beginFill(Color.BLACK, Overlay.BACKGROUND_ALPHA);
     frame.drawRect(0, 0, Application.WIDTH, Application.HEIGHT);
     frame.endFill();
     frame.interactive = true;
@@ -34,4 +34,4 @@ class Popup extends Container {
   };
 }
 
-export default Popup;
+export default Overlay;

@@ -5,7 +5,6 @@ import LobbyViewController from "./LobbyViewController";
 import Text from "../Text";
 import ViewController from "./ViewController";
 import Container from "../Container";
-import * as PIXI from "pixi.js";
 import {
   TycoonOptionKey,
   TycoonOptions,
@@ -18,28 +17,19 @@ class TycoonOptionsView extends Container {
   private tycoonOptions: TycoonOptions;
 
   private customSettingsText: Text;
-  private optionTexts: Text[];
+  private tycoonOptionTexts: Text[];
 
   constructor(tycoonOptions: TycoonOptions) {
     super();
 
     this.tycoonOptions = tycoonOptions;
-
-    const textStyle: Partial<PIXI.ITextStyle> = {
+    this.customSettingsText = new Text("Custom Settings", {
       fill: Color.WHITE,
       fontSize: 16,
-    };
-
-    this.customSettingsText = new Text("Custom Settings", textStyle);
-
-    this.optionTexts = [];
-
-    const optionKeys = Object.values(TycoonOptionKey);
-    optionKeys.forEach(() => {
-      this.optionTexts.push(new Text("", textStyle));
     });
-    this.updateOptionTexts();
+    this.tycoonOptionTexts = this.createTycoonOptionTexts();
 
+    this.updateOptionTexts();
     this.layout();
     this.draw();
   }
@@ -48,8 +38,24 @@ class TycoonOptionsView extends Container {
     this.layoutOptionTexts();
   }
 
+  private createTycoonOptionTexts() {
+    const texts = [];
+
+    const optionKeys = Object.values(TycoonOptionKey);
+    optionKeys.forEach(() => {
+      texts.push(
+        new Text("", {
+          fill: Color.WHITE,
+          fontSize: 16,
+        })
+      );
+    });
+
+    return texts;
+  }
+
   private layoutOptionTexts() {
-    this.optionTexts.forEach((text, index) => {
+    this.tycoonOptionTexts.forEach((text, index) => {
       text.y =
         this.customSettingsText.height +
         Application.spacing(2) +
@@ -59,7 +65,7 @@ class TycoonOptionsView extends Container {
 
   private draw() {
     this.addChild(this.customSettingsText);
-    this.addChild(...this.optionTexts);
+    this.addChild(...this.tycoonOptionTexts);
   }
 
   public setTycoonOptions(tycoonOptions: TycoonOptions) {
@@ -70,7 +76,7 @@ class TycoonOptionsView extends Container {
   private updateOptionTexts() {
     const optionKeys = Object.values(TycoonOptionKey);
     optionKeys.forEach((optionKey, index) => {
-      const text = this.optionTexts[index];
+      const text = this.tycoonOptionTexts[index];
       const checked = this.tycoonOptions[optionKey];
       text.text = `${optionKey.toString()}: ${checked ? "yes" : "no"}`;
     });
@@ -79,42 +85,42 @@ class TycoonOptionsView extends Container {
 
 class RoomViewController extends ViewController {
   protected roomId: string;
-  protected numPeople: number;
+  protected roomNumPlayers: number;
   protected roomCapacity: number;
   protected tycoonOptions: TycoonOptions;
 
-  protected labelText: Text;
-  protected numPeopleText: Text;
+  protected roomText: Text;
+  protected numPlayersText: Text;
   protected leaveButton: Button;
-  protected tycoonOptionsText: TycoonOptionsView;
+  protected tycoonOptionsView: TycoonOptionsView;
 
   constructor(roomId: string) {
     super();
     this.roomId = roomId;
-    this.numPeople = 1;
+    this.roomNumPlayers = 1;
     this.roomCapacity = 2;
     this.tycoonOptions = DEFAULT_TYCOON_OPTIONS;
 
-    this.labelText = new Text(`🏠 Room ${roomId} 🏠`, { fill: Color.WHITE });
-    this.numPeopleText = new Text("", { fill: Color.WHITE });
+    this.roomText = new Text(`🏠 Room ${roomId} 🏠`, { fill: Color.WHITE });
+    this.numPlayersText = new Text("", { fill: Color.WHITE });
     this.leaveButton = this.createLeaveButton();
-    this.tycoonOptionsText = new TycoonOptionsView(this.tycoonOptions);
+    this.tycoonOptionsView = new TycoonOptionsView(this.tycoonOptions);
 
-    this.updateNumPeopleText();
+    this.updateRoomNumPlayersText();
   }
 
   protected layout() {
-    this.layoutLabelText();
+    this.layoutRoomText();
     this.layoutNumPeopleText();
     this.layoutLeaveButton();
     this.layoutTycoonOptionsText();
   }
 
   protected draw() {
-    this.drawLabelText();
-    this.drawNumPeopleText();
-    this.drawLeaveButton();
-    this.drawTycoonOptionsText();
+    this.addChild(this.roomText);
+    this.addChild(this.numPlayersText);
+    this.addChild(this.leaveButton);
+    this.addChild(this.tycoonOptionsView);
   }
 
   protected addEventListeners() {
@@ -123,65 +129,46 @@ class RoomViewController extends ViewController {
       "room-status-update",
       this.handleSocketRoomStatusUpdate.bind(this)
     );
-    socket.on("start-success", this.handleSocketStartSuccess);
+    socket.on("start-success", this.handleSocketStartSuccess.bind(this));
   }
 
   protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
-    this.numPeople = roomJson.numSockets;
+    this.roomNumPlayers = roomJson.numPlayers;
     this.tycoonOptions = roomJson.options;
-    this.updateNumPeopleText();
+    this.updateRoomNumPlayersText();
   }
 
   protected removeEventListeners() {
     const socket = Application.shared.socket;
-    socket.off(
-      "room-status-update",
-      this.handleSocketRoomStatusUpdate.bind(this)
-    );
-    socket.off("start-success", this.handleSocketStartSuccess);
+    socket.off("room-status-update");
+    socket.off("start-success");
   }
 
-  private updateNumPeopleText() {
-    this.numPeopleText.text = `${this.numPeople}/${this.roomCapacity} 👤`;
-    if (this.numPeople === this.roomCapacity) {
-      this.numPeopleText.tint = Color.GREEN;
+  private updateRoomNumPlayersText() {
+    this.numPlayersText.text = `${this.roomNumPlayers}/${this.roomCapacity} 👤`;
+    if (this.roomNumPlayers === this.roomCapacity) {
+      this.numPlayersText.tint = Color.GREEN;
     } else {
-      this.numPeopleText.tint = Color.RED;
+      this.numPlayersText.tint = Color.RED;
     }
   }
 
   private layoutTycoonOptionsText() {
-    this.tycoonOptionsText.x = Application.spacing(3);
-    this.tycoonOptionsText.y = Application.spacing(3);
+    this.tycoonOptionsView.x = Application.spacing(3);
+    this.tycoonOptionsView.y = Application.spacing(3);
   }
 
-  private drawTycoonOptionsText() {
-    this.addChild(this.tycoonOptionsText);
-  }
-
-  private drawLabelText() {
-    this.addChild(this.labelText);
-  }
-
-  private layoutLabelText() {
-    this.labelText.anchor.set(0.5);
-    this.labelText.x = Application.WIDTH / 2;
-    this.labelText.y = Application.spacing(5);
-  }
-
-  private drawNumPeopleText() {
-    this.addChild(this.numPeopleText);
+  private layoutRoomText() {
+    this.roomText.anchor.set(0.5);
+    this.roomText.x = Application.WIDTH / 2;
+    this.roomText.y = Application.spacing(5);
   }
 
   private layoutNumPeopleText() {
-    this.numPeopleText.anchor.set(0.5);
-    this.numPeopleText.x = Application.WIDTH / 2;
-    this.numPeopleText.y =
-      Application.HEIGHT - this.numPeopleText.height - Application.spacing(3);
-  }
-
-  private drawLeaveButton() {
-    this.addChild(this.leaveButton);
+    this.numPlayersText.anchor.set(0.5);
+    this.numPlayersText.x = Application.WIDTH / 2;
+    this.numPlayersText.y =
+      Application.HEIGHT - this.numPlayersText.height - Application.spacing(3);
   }
 
   private layoutLeaveButton() {
@@ -192,19 +179,19 @@ class RoomViewController extends ViewController {
 
   private createLeaveButton() {
     const button = new Button("leave ❌");
-    button.on("pointerdown", this.handleLeaveButtonPointerDown);
+    button.onPointerDown(this.handleLeaveButtonPointerDown.bind(this));
     return button;
   }
 
-  private handleLeaveButtonPointerDown = () => {
+  private handleLeaveButtonPointerDown() {
     this.loadViewController(new LobbyViewController());
     const socket = Application.shared.socket;
     socket.emit("leave-room");
-  };
+  }
 
-  private handleSocketStartSuccess = (tycoonOptions: TycoonOptions) => {
+  private handleSocketStartSuccess(tycoonOptions: TycoonOptions) {
     this.loadViewController(new TycoonViewController(tycoonOptions));
-  };
+  }
 }
 
 export default RoomViewController;

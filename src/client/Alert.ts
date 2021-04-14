@@ -2,10 +2,10 @@ import * as PIXI from "pixi.js";
 import Application from "./Application";
 import Button from "./Button";
 import Color from "./Color";
-import Popup from "./Popup";
+import Overlay from "./Overlay";
 import Text from "./Text";
 
-class Alert extends Popup {
+class Alert extends Overlay {
   private static get WIDTH() {
     return (Application.WIDTH * 2) / 3;
   }

@@ -20,7 +20,7 @@ class LoadingViewController extends ViewController {
 
   protected layout() {
     this.layoutLoadingText();
-    this.layoutLoadingIndicator();
+    this.layoutPercentageText();
   }
 
   protected draw() {
@@ -38,7 +38,7 @@ class LoadingViewController extends ViewController {
     this.loadingText.y = Application.HEIGHT / 2 - Application.spacing(4);
   }
 
-  private layoutLoadingIndicator() {
+  private layoutPercentageText() {
     this.percentageText.anchor.set(0.5);
     this.percentageText.x = Application.WIDTH / 2;
     this.percentageText.y = Application.HEIGHT / 2 + Application.spacing(4);

@@ -111,7 +111,7 @@ class Room {
   public toJson(): RoomJson {
     return {
       id: this.id,
-      numSockets: this.getSockets().length,
+      numPlayers: this.getSockets().length,
       capacity: Room.CAPACITY,
       options: this.tycoonOptions,
     };

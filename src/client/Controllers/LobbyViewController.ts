@@ -5,11 +5,11 @@ import Text from "../Text";
 import ViewController from "./ViewController";
 import Button from "../Button";
 import HostRoomViewController from "./HostRoomViewController";
-import Popup from "../Popup";
+import Overlay from "../Overlay";
 import GuestRoomViewController from "./GuestRoomViewController";
 import TextField from "../TextField";
 
-class JoinRoomPopup extends Popup {
+class JoinRoomPopup extends Overlay {
   private static get WIDTH() {
     return Application.WIDTH / 2;
   }
@@ -118,7 +118,7 @@ class LobbyViewController extends ViewController {
 
   constructor() {
     super();
-    this.titleText = new Text("🃏 Tycoon 🃏", { fill: Color.WHITE });
+    this.titleText = new Text("💁 Lobby 💁", { fill: Color.WHITE });
     this.createRoomButton = this.createCreateRoomButton();
     this.joinRoomButton = this.createJoinRoomButton();
     this.joinRoomPopup = this.createJoinRoomPopup();

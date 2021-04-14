@@ -31,24 +31,24 @@ class GuestRoomViewController extends RoomViewController {
 
   protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
     super.handleSocketRoomStatusUpdate(roomJson);
-    this.tycoonOptionsText.setTycoonOptions(roomJson.options);
+    this.tycoonOptionsView.setTycoonOptions(roomJson.options);
   }
 
   protected addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
-    socket.on("host-left-room", this.handleSocketHostLeaveRoom);
+    socket.on("host-left-game", this.handleSocketHostLeaveRoom.bind(this));
   }
 
   protected removeEventListeners() {
     super.removeEventListeners();
     const socket = Application.shared.socket;
-    socket.off("host-left-room", this.handleSocketHostLeaveRoom);
+    socket.off("host-left-game");
   }
 
-  private handleSocketHostLeaveRoom = () => {
+  private handleSocketHostLeaveRoom() {
     this.addChild(this.hostLeftRoomAlert);
-  };
+  }
 
   private layoutPromptText() {
     this.promptText.anchor.set(0.5);
@@ -58,10 +58,12 @@ class GuestRoomViewController extends RoomViewController {
 
   private createHostLeftRoomAlert() {
     const alert = new Alert("The host left the room :(");
-    alert.onOkButtonPointerDown(() => {
-      this.loadViewController(new LobbyViewController());
-    });
+    alert.onOkButtonPointerDown(this.handleHostLeftRoomAlertOk.bind(this));
     return alert;
+  }
+
+  private handleHostLeftRoomAlertOk() {
+    this.loadViewController(new LobbyViewController());
   }
 }
 

@@ -7,13 +7,14 @@ import WebFontLoader from "./WebFontLoader";
 class Application {
   public static readonly WIDTH = 800;
   public static readonly HEIGHT = 600;
-  public static readonly SPACING = 8;
 
   public static spacing(count: number) {
     return Application.SPACING * count;
   }
 
   public static readonly shared = new Application();
+
+  private static readonly SPACING = 8;
 
   public readonly socket: SocketIOClient.Socket;
 

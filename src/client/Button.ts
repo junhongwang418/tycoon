@@ -14,7 +14,7 @@ class Button extends Container {
 
   constructor(text: string) {
     super();
-    this.text = new Text(text);
+    this.text = new Text(text, { fill: Color.WHITE });
     this.frame = new PIXI.Graphics();
     this.enableInteraction();
     this.addEventListeners();
@@ -31,11 +31,13 @@ class Button extends Container {
   }
 
   private handlePointerOver = () => {
-    this.frame.tint = Color.BLUE;
+    this.frame.tint = Color.GREY;
+    this.text.tint = Color.GREY;
   };
 
   private handlePointerOut = () => {
     this.frame.tint = Color.WHITE;
+    this.text.tint = Color.WHITE;
   };
 
   private draw() {
@@ -44,8 +46,8 @@ class Button extends Container {
   }
 
   private drawFrame() {
-    this.frame.lineStyle(1, Color.BLACK);
-    this.frame.beginFill(Color.WHITE);
+    this.frame.lineStyle(1, Color.WHITE);
+    this.frame.beginFill(Color.BLACK);
 
     const size = this.calculateSize();
     this.frame.drawRect(0, 0, size.width, size.height);
@@ -89,11 +91,13 @@ class Button extends Container {
   public enable() {
     this.interactive = true;
     this.frame.tint = Color.WHITE;
+    this.text.tint = Color.WHITE;
   }
 
   public disable() {
     this.interactive = false;
-    this.frame.tint = Color.GREY;
+    this.frame.tint = Color.DARK_GREY;
+    this.text.tint = Color.DARK_GREY;
   }
 
   public onPointerDown(cb: () => void) {
