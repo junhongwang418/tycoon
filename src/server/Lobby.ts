@@ -1,6 +1,6 @@
 import Room from "./Room";
 import { Socket } from "socket.io";
-import Algorithm from "../Common/Algorithm";
+import Algorithm from "../common/Algorithm";
 
 class Lobby {
   private rooms: { [id: string]: Room };
