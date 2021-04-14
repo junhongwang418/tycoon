@@ -134,7 +134,11 @@ class RoomViewController extends ViewController {
 
   protected removeEventListeners() {
     const socket = Application.shared.socket;
-    socket.off("room-status-update");
+    socket.off(
+      "room-status-update",
+      this.handleSocketRoomStatusUpdate.bind(this)
+    );
+    socket.off("start-success", this.handleSocketStartSuccess);
   }
 
   private updateNumPeopleText() {

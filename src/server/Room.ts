@@ -54,7 +54,9 @@ class Room {
         Object.values(this.guests).forEach((guest) => {
           this.removeSocket(guest);
           Lobby.shared.addSocket(guest);
-          guest.emit("host-left-game");
+          if (this.tycoon) {
+            guest.emit("host-left-game");
+          }
         });
         Lobby.shared.removeRoom(this.id);
       } else {
@@ -62,6 +64,11 @@ class Room {
           this.host.emit("guest-left-game", this.id);
         }
         this.broadcastRoomStatusUpdate();
+      }
+
+      if (this.tycoon) {
+        this.tycoon.removeEventListeners();
+        this.tycoon = null;
       }
     });
 
@@ -72,7 +79,7 @@ class Room {
       });
 
       this.tycoon = new Tycoon(this.host, Object.values(this.guests)[0]);
-      this.tycoon.start();
+      this.tycoon.addEventListeners();
     });
 
     socket.on("options-update", (tycoonOptions: TycoonOptions) => {

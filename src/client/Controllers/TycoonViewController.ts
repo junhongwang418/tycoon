@@ -3,27 +3,21 @@ import Button from "../Button";
 import Card from "../Card";
 import Color from "../Color";
 import Text from "../Text";
-import TycoonValidator from "../TycoonValidator";
 import Application from "../Application";
 import ViewController from "./ViewController";
 import Sound from "../Sound";
 import { CardJson, CardValueUtil } from "../../Common/Card";
-import {
-  DEFAULT_TYCOON_STATE,
-  TycoonOptions,
-  TycoonState,
-} from "../../Common/Tycoon";
+import { TycoonOptions } from "../../Common/Tycoon";
 import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
 import Alert from "../Alert";
+import Tycoon from "../Tycoon";
 
 class TycoonViewController extends ViewController {
   private myCards: Card[];
   private playedCards: Card[][];
 
-  private isMyTurn: boolean;
-  private tycoonValidator: TycoonValidator;
-  private tycoonState: TycoonState;
+  private tycoon: Tycoon;
 
   private promptText: Text;
   private actionButton: Button;
@@ -33,12 +27,9 @@ class TycoonViewController extends ViewController {
 
   constructor(tycoonOptions: TycoonOptions) {
     super();
-
-    this.isMyTurn = false;
     this.myCards = [];
     this.playedCards = [];
-    this.tycoonValidator = new TycoonValidator(tycoonOptions);
-    this.tycoonState = DEFAULT_TYCOON_STATE;
+    this.tycoon = new Tycoon(tycoonOptions);
     this.promptText = new Text("", { fill: Color.WHITE });
     this.actionButton = this.createActionButton();
     this.hostLeftRoomAlert = new Alert("The host left the game :(");
@@ -109,10 +100,10 @@ class TycoonViewController extends ViewController {
 
   private handleSocketInitSuccess = (data: {
     cardJsons: CardJson[];
-    isMyTurn: boolean;
+    myTurn: number;
   }) => {
-    const { cardJsons, isMyTurn } = data;
-    this.isMyTurn = isMyTurn;
+    const { cardJsons, myTurn } = data;
+    this.tycoon.init(myTurn);
     this.myCards = cardJsons.map((json) => Card.fromJson(json));
     this.myCards.forEach((card) => {
       card.setCenterAsOrigin();
@@ -130,10 +121,10 @@ class TycoonViewController extends ViewController {
     });
     this.drawMyCards();
     this.layoutMyCards();
-    this.updatePromptTextBasedOnMyTurn();
+    this.updatePromptText();
     this.updateActionButton();
 
-    if (!this.isMyTurn) {
+    if (!this.tycoon.isMyTurn()) {
       this.disableMyCardsInteraction();
     }
   };
@@ -142,7 +133,7 @@ class TycoonViewController extends ViewController {
     this.off("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
-    socket.off("init", this.handleSocketInitSuccess);
+    socket.off("init-success", this.handleSocketInitSuccess);
     socket.off("update", this.handleSocketUpdate);
     socket.off("lose", this.handleSocketLose);
     socket.off("host-left-game", this.handleHostLeftGame);
@@ -150,7 +141,7 @@ class TycoonViewController extends ViewController {
   }
 
   private handleActionButtonPointerDown = () => {
-    const selectedCards = this.myCards.filter((card) => card.isSelected());
+    const selectedCards = this.getSelectedCards();
     const selectedCardJsons = selectedCards.map((card) => card.toJson());
 
     const socket = Application.shared.socket;
@@ -159,9 +150,15 @@ class TycoonViewController extends ViewController {
     this.myCards = this.myCards.filter((card) => !card.isSelected());
     this.layoutMyCards();
 
+    this.tycoon.play(selectedCards);
+
     const isPass = selectedCards.length === 0;
     if (isPass) {
       this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.playedCards = [];
+    } else if (this.tycoon.getPrevCards().length === 0) {
+      this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.removeChild(...selectedCards);
       this.playedCards = [];
     } else {
       this.playedCards.push(selectedCards);
@@ -173,9 +170,8 @@ class TycoonViewController extends ViewController {
       this.layoutSelectedCards(selectedCards);
     }
 
-    this.isMyTurn = false;
-    this.disableMyCardsInteraction();
-    this.updatePromptTextBasedOnMyTurn();
+    this.updateMyCardsInteraction();
+    this.updatePromptText();
     this.updateActionButton();
 
     Sound.play("cardPlace1.ogg");
@@ -205,7 +201,11 @@ class TycoonViewController extends ViewController {
   private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
     const theirSelectedCards = lastCardJsons.map((json) => Card.fromJson(json));
     theirSelectedCards.forEach((card) => (card.interactive = false));
-    if (theirSelectedCards.length === 0) {
+
+    this.tycoon.play(theirSelectedCards);
+
+    const isPass = theirSelectedCards.length === 0;
+    if (isPass || this.tycoon.getPrevCards().length === 0) {
       this.playedCards.forEach((cards) => this.removeChild(...cards));
       this.playedCards = [];
     } else {
@@ -215,14 +215,21 @@ class TycoonViewController extends ViewController {
       Sound.play("cardPlace1.ogg");
     }
 
-    this.isMyTurn = true;
-    this.enableMyCardsInteraction();
-    this.updatePromptTextBasedOnMyTurn();
+    this.updateMyCardsInteraction();
+    this.updatePromptText();
     this.updateActionButton();
   };
 
-  private updatePromptTextBasedOnMyTurn() {
-    if (this.isMyTurn) {
+  private updateMyCardsInteraction() {
+    if (this.tycoon.isMyTurn()) {
+      this.enableMyCardsInteraction();
+    } else {
+      this.disableMyCardsInteraction();
+    }
+  }
+
+  private updatePromptText() {
+    if (this.tycoon.isMyTurn()) {
       this.promptText.text = "Your Turn 🙌";
     } else {
       this.promptText.text = "Their Turn　🤔🤔🤔";
@@ -230,8 +237,8 @@ class TycoonViewController extends ViewController {
   }
 
   private updateActionButton() {
-    if (this.isMyTurn) {
-      if (this.isCardSelectionValid()) {
+    if (this.tycoon.isMyTurn()) {
+      if (this.tycoon.validateNextCards(this.getSelectedCards())) {
         this.actionButton.enable();
         if (this.getSelectedCards().length === 0) {
           this.actionButton.updateText("pass");
@@ -246,24 +253,12 @@ class TycoonViewController extends ViewController {
     }
   }
 
-  private isCardSelectionValid() {
-    const selectedCards = this.getSelectedCards();
-    return this.tycoonValidator
-      .withPrevCards(this.getPrevCards())
-      .withState(this.tycoonState)
-      .validateNextCards(selectedCards);
-  }
-
   private getSelectedCards() {
     return this.myCards.filter((card) => card.isSelected());
   }
 
-  private getPrevCards() {
-    return this.playedCards[this.playedCards.length - 1] || [];
-  }
-
   private handlePointerDown = () => {
-    if (!this.isMyTurn) return;
+    if (!this.tycoon.isMyTurn()) return;
     this.updateActionButton();
   };
 

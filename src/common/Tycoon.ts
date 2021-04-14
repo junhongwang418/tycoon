@@ -6,7 +6,6 @@ export enum TycoonOptionKey {
   Sequence = "sequence",
   Tight = "tight",
   ThreeSpadesReversal = "three spades reversal",
-  ThreeClubsStart = "three clubs start",
   ElevenBack = "eleven back",
 }
 
@@ -15,6 +14,7 @@ export enum TycoonStateKey {
   ElevenBack = "eleven back",
   Tight = "tight",
   Sequence = "sequence",
+  Turn = "turn",
 }
 
 export interface TycoonOptions {
@@ -23,7 +23,6 @@ export interface TycoonOptions {
   [TycoonOptionKey.Sequence]: boolean;
   [TycoonOptionKey.Tight]: boolean;
   [TycoonOptionKey.ThreeSpadesReversal]: boolean;
-  [TycoonOptionKey.ThreeClubsStart]: boolean;
   [TycoonOptionKey.ElevenBack]: boolean;
 }
 
@@ -33,15 +32,15 @@ export const DEFAULT_TYCOON_OPTIONS: TycoonOptions = {
   [TycoonOptionKey.Sequence]: false,
   [TycoonOptionKey.Tight]: false,
   [TycoonOptionKey.ThreeSpadesReversal]: false,
-  [TycoonOptionKey.ThreeClubsStart]: false,
   [TycoonOptionKey.ElevenBack]: false,
 };
 
 export interface TycoonState {
   [TycoonStateKey.Revolution]: boolean;
   [TycoonStateKey.ElevenBack]: boolean;
-  [TycoonStateKey.Sequence]: CardValue;
+  [TycoonStateKey.Sequence]: boolean;
   [TycoonStateKey.Tight]: CardSuit[];
+  [TycoonStateKey.Turn]: number;
 }
 
 export const DEFAULT_TYCOON_STATE: TycoonState = {
@@ -49,4 +48,5 @@ export const DEFAULT_TYCOON_STATE: TycoonState = {
   [TycoonStateKey.ElevenBack]: false,
   [TycoonStateKey.Sequence]: null,
   [TycoonStateKey.Tight]: [],
+  [TycoonStateKey.Turn]: 0,
 };

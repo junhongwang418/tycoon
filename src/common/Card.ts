@@ -50,7 +50,7 @@ export class CardValueUtil {
     return aNumber < bNumber;
   }
 
-  private static toVirtualNumber(cardValue: CardValue) {
+  public static toVirtualNumber(cardValue: CardValue) {
     if (cardValue === CardValue.Ace) return 14;
     if (cardValue === CardValue.Two) return 15;
     return CardValueUtil.toNumber(cardValue);

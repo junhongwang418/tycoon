@@ -175,6 +175,10 @@ class Card extends Container {
   public enableSelection() {
     this.frame.interactive = true;
   }
+
+  public isThreeOfSpades() {
+    return this.value === CardValue.Three && this.suit === CardSuit.Spade;
+  }
 }
 
 export default Card;
