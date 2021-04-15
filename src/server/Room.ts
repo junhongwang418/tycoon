@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { RoomJson } from "../common/Room";
-import { TycoonOptions, DEFAULT_TYCOON_OPTIONS } from "../common/Tycoon";
+import { TycoonOptions, TycoonUtil } from "../common/Tycoon";
 import Lobby from "./Lobby";
 import Tycoon from "./Tycoon";
 
@@ -19,7 +19,7 @@ class Room {
     this.id = id;
     this.guests = {};
     this.tycoon = null;
-    this.tycoonOptions = DEFAULT_TYCOON_OPTIONS;
+    this.tycoonOptions = TycoonUtil.createDefaultTycoonOptions();
   }
 
   public addSocket(socket: Socket) {
@@ -90,14 +90,11 @@ class Room {
 
   public removeSocket(socket: Socket) {
     socket.removeAllListeners("leave-room");
+    socket.removeAllListeners("start");
+    socket.removeAllListeners("options-update");
     if (socket.id !== this.host.id) {
       delete this.guests[socket.id];
     }
-
-    // this.sockets = this.sockets.filter((s) => s.id !== socket.id);
-    // this.readySet.delete(socket.id);
-    // socket.removeAllListeners("leave-room");
-    // socket.removeAllListeners("ready");
   }
 
   public isFull() {

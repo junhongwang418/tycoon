@@ -1,4 +1,4 @@
-import { CardSuit } from "./Card";
+import { CardJson, CardSuit } from "./Card";
 
 export enum TycoonOptionKey {
   Revolution = "revolution",
@@ -26,15 +26,6 @@ export interface TycoonOptions {
   [TycoonOptionKey.ElevenBack]: boolean;
 }
 
-export const DEFAULT_TYCOON_OPTIONS: TycoonOptions = {
-  [TycoonOptionKey.Revolution]: false,
-  [TycoonOptionKey.EightStop]: false,
-  [TycoonOptionKey.Sequence]: false,
-  [TycoonOptionKey.Tight]: false,
-  [TycoonOptionKey.ThreeSpadesReversal]: false,
-  [TycoonOptionKey.ElevenBack]: false,
-};
-
 export interface TycoonState {
   [TycoonStateKey.Revolution]: boolean;
   [TycoonStateKey.ElevenBack]: boolean;
@@ -43,10 +34,30 @@ export interface TycoonState {
   [TycoonStateKey.Turn]: number;
 }
 
-export const DEFAULT_TYCOON_STATE: TycoonState = {
-  [TycoonStateKey.Revolution]: false,
-  [TycoonStateKey.ElevenBack]: false,
-  [TycoonStateKey.Sequence]: null,
-  [TycoonStateKey.Tight]: [],
-  [TycoonStateKey.Turn]: 0,
-};
+export interface SocketInitSuccessData {
+  cardJsons: CardJson[];
+  myTurn: number;
+}
+
+export class TycoonUtil {
+  public static createDefaultTycoonState(): TycoonState {
+    return {
+      [TycoonStateKey.Revolution]: false,
+      [TycoonStateKey.ElevenBack]: false,
+      [TycoonStateKey.Sequence]: null,
+      [TycoonStateKey.Tight]: [],
+      [TycoonStateKey.Turn]: 0,
+    };
+  }
+
+  public static createDefaultTycoonOptions(): TycoonOptions {
+    return {
+      [TycoonOptionKey.Revolution]: false,
+      [TycoonOptionKey.EightStop]: false,
+      [TycoonOptionKey.Sequence]: false,
+      [TycoonOptionKey.Tight]: false,
+      [TycoonOptionKey.ThreeSpadesReversal]: false,
+      [TycoonOptionKey.ElevenBack]: false,
+    };
+  }
+}

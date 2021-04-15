@@ -44,10 +44,12 @@ class Tycoon {
 
     this.player1Socket.on("win", () => {
       this.player2Socket.emit("lose");
+      this.removeEventListeners();
     });
 
     this.player2Socket.on("win", () => {
       this.player1Socket.emit("lose");
+      this.removeEventListeners();
     });
   }
 

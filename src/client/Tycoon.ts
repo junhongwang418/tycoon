@@ -1,10 +1,10 @@
 import { CardValue, CardValueUtil } from "../common/Card";
 import {
-  DEFAULT_TYCOON_STATE,
   TycoonOptionKey,
   TycoonOptions,
   TycoonState,
   TycoonStateKey,
+  TycoonUtil,
 } from "../common/Tycoon";
 import Card from "./Card";
 
@@ -16,7 +16,7 @@ class Tycoon {
 
   constructor(options: TycoonOptions) {
     this.options = options;
-    this.state = DEFAULT_TYCOON_STATE;
+    this.state = TycoonUtil.createDefaultTycoonState();
     this.prevCards = [];
   }
 

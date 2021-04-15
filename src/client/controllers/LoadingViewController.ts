@@ -4,7 +4,6 @@ import MenuViewController from "./MenuViewController";
 import Text from "../Text";
 import ViewController from "./ViewController";
 import Application from "../Application";
-import Texture from "../Texture";
 import Sound from "../Sound";
 
 class LoadingViewController extends ViewController {

@@ -8,7 +8,7 @@ import Container from "../Container";
 import {
   TycoonOptionKey,
   TycoonOptions,
-  DEFAULT_TYCOON_OPTIONS,
+  TycoonUtil,
 } from "../../common/Tycoon";
 import TycoonViewController from "./TycoonViewController";
 import { RoomJson } from "../../common/Room";
@@ -99,7 +99,7 @@ class RoomViewController extends ViewController {
     this.roomId = roomId;
     this.roomNumPlayers = 1;
     this.roomCapacity = 2;
-    this.tycoonOptions = DEFAULT_TYCOON_OPTIONS;
+    this.tycoonOptions = TycoonUtil.createDefaultTycoonOptions();
 
     this.roomText = new Text(`🏠 Room ${roomId} 🏠`, { fill: Color.WHITE });
     this.numPlayersText = new Text("", { fill: Color.WHITE });
@@ -129,7 +129,7 @@ class RoomViewController extends ViewController {
       "room-status-update",
       this.handleSocketRoomStatusUpdate.bind(this)
     );
-    socket.on("start-success", this.handleSocketStartSuccess.bind(this));
+    socket.on("start-success", this.handleSocketStartSuccess);
   }
 
   protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
@@ -189,9 +189,9 @@ class RoomViewController extends ViewController {
     socket.emit("leave-room");
   }
 
-  private handleSocketStartSuccess(tycoonOptions: TycoonOptions) {
-    this.loadViewController(new TycoonViewController(tycoonOptions));
-  }
+  private handleSocketStartSuccess = (tycoonOptions: TycoonOptions) => {
+    this.pushViewController(new TycoonViewController(tycoonOptions));
+  };
 }
 
 export default RoomViewController;

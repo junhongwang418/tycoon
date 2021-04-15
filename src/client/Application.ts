@@ -44,6 +44,20 @@ class Application {
   public removeViewController(vc: ViewController) {
     this.app.stage.removeChild(vc);
   }
+
+  public removeAllViewControllers() {
+    this.app.stage.removeChildren();
+  }
+
+  public removeTopViewController() {
+    this.app.stage.removeChildAt(this.app.stage.children.length - 1);
+  }
+
+  public getTopViewController() {
+    return this.app.stage.getChildAt(
+      this.app.stage.children.length - 1
+    ) as ViewController;
+  }
 }
 
 export default Application;
