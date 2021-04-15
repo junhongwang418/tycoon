@@ -14,7 +14,7 @@ import Alert from "../Alert";
 import Tycoon from "../Tycoon";
 import anime from "animejs";
 import Container from "../Container";
-import GuestRoomViewController from "./GuestRoomViewController";
+import Speech from "../Speech";
 
 class PlayerView extends Container {
   private static readonly WIDTH = 128;
@@ -127,6 +127,7 @@ class TycoonViewController extends ViewController {
   private gameOverAlert: Alert;
   private myView: PlayerView;
   private theirView: PlayerView;
+  private theirSpeech: Speech;
 
   private trashText: Text;
 
@@ -143,6 +144,7 @@ class TycoonViewController extends ViewController {
     this.myView = new PlayerView("You");
     this.theirView = new PlayerView("Them");
     this.trashText = new Text("🗑", { fill: Color.WHITE, fontSize: 64 });
+    this.theirSpeech = new Speech("Pass");
     this.enableInteraction();
   }
 
@@ -176,6 +178,17 @@ class TycoonViewController extends ViewController {
     this.layoutMyView();
     this.layoutTheirView();
     this.layoutTrashText();
+    this.layoutTheirSpeech();
+  }
+
+  private layoutTheirSpeech() {
+    this.theirSpeech.setCenterAsOrigin();
+    this.theirSpeech.x =
+      this.theirView.x +
+      this.theirView.width / 2 +
+      this.theirSpeech.width / 2 +
+      Application.spacing(2);
+    this.theirSpeech.y = this.theirSpeech.height / 2 + Application.spacing(2);
   }
 
   private layoutTrashText() {
@@ -208,8 +221,8 @@ class TycoonViewController extends ViewController {
 
     const socket = Application.shared.socket;
     socket.on("init-success", this.handleSocketInitSuccess.bind(this));
-    socket.on("update", this.handleSocketUpdate);
-    socket.on("lose", this.handleSocketLose);
+    socket.on("update", this.handleSocketUpdate.bind(this));
+    socket.on("lose", this.handleSocketLose.bind(this));
     socket.on("host-left", this.handleHostLeft.bind(this));
     socket.on("guest-left", this.handleGuestLeft.bind(this));
 
@@ -361,11 +374,11 @@ class TycoonViewController extends ViewController {
     }
   }
 
-  private handleSocketLose = () => {
+  private handleSocketLose() {
     this.addChild(this.gameOverAlert);
-  };
+  }
 
-  private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
+  private handleSocketUpdate(lastCardJsons: CardJson[]) {
     const theirSelectedCards = lastCardJsons.map((json) => {
       const card = Card.fromJson(json);
       card.setCenterAsOrigin();
@@ -379,6 +392,9 @@ class TycoonViewController extends ViewController {
     const isPass = theirSelectedCards.length === 0;
     if (isPass) {
       this.removePlayedCardsWithAnimation();
+      this.showTheirSpeechWithAnimation(() => {
+        this.removeChild(this.theirSpeech);
+      });
     } else {
       this.theirView.setNumCardsLeft(
         this.theirView.getNumCardsLeft() - theirSelectedCards.length
@@ -396,7 +412,24 @@ class TycoonViewController extends ViewController {
     }
 
     this.update();
-  };
+  }
+
+  private showTheirSpeechWithAnimation(onComplete: () => void) {
+    this.addChild(this.theirSpeech);
+
+    const obj = {
+      scale: 0,
+    };
+    this.theirSpeech.scale.set(0);
+    anime({
+      targets: obj,
+      scale: 1,
+      update: () => {
+        this.theirSpeech.scale.set(obj.scale);
+      },
+      complete: onComplete,
+    });
+  }
 
   private updateMyCardsInteraction() {
     if (this.tycoon.isMyTurn()) {
