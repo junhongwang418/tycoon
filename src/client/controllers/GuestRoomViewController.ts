@@ -37,16 +37,16 @@ class GuestRoomViewController extends RoomViewController {
   protected addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
-    socket.on("host-left-game", this.handleSocketHostLeaveRoom.bind(this));
+    socket.on("host-left", this.handleSocketHostLeave.bind(this));
   }
 
   protected removeEventListeners() {
     super.removeEventListeners();
     const socket = Application.shared.socket;
-    socket.off("host-left-game");
+    socket.off("host-left");
   }
 
-  private handleSocketHostLeaveRoom() {
+  private handleSocketHostLeave() {
     this.addChild(this.hostLeftRoomAlert);
   }
 

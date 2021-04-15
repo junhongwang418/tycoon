@@ -54,15 +54,11 @@ class Room {
         Object.values(this.guests).forEach((guest) => {
           this.removeSocket(guest);
           Lobby.shared.addSocket(guest);
-          if (this.tycoon) {
-            guest.emit("host-left-game");
-          }
+          guest.emit("host-left");
         });
         Lobby.shared.removeRoom(this.id);
       } else {
-        if (this.tycoon) {
-          this.host.emit("guest-left-game", this.id);
-        }
+        this.host.emit("guest-left", this.id);
         this.broadcastRoomStatusUpdate();
       }
 

@@ -46,7 +46,6 @@ class LoadingViewController extends ViewController {
 
   private loadGameAssets() {
     const loader = PIXI.Loader.shared;
-    loader.add(Texture.getFilePaths());
     loader.add(Sound.getFilePaths());
     loader.onProgress.add(this.handleLoaderOnProgress);
     loader.load(this.handleLoaderOnComplete);

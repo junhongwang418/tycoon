@@ -79,20 +79,20 @@ class TycoonViewController extends ViewController {
     socket.on("init-success", this.handleSocketInitSuccess);
     socket.on("update", this.handleSocketUpdate);
     socket.on("lose", this.handleSocketLose);
-    socket.on("host-left-game", this.handleHostLeftGame);
-    socket.on("guest-left-game", this.handleGuestLeftGame);
+    socket.on("host-left", this.handleHostLeft);
+    socket.on("guest-left", this.handleGuestLeft);
 
     socket.emit("init");
   }
 
-  private handleHostLeftGame = () => {
+  private handleHostLeft = () => {
     this.hostLeftRoomAlert.onOkButtonPointerDown(() => {
       this.loadViewController(new LobbyViewController());
     });
     this.addChild(this.hostLeftRoomAlert);
   };
 
-  private handleGuestLeftGame = (roomId: string) => {
+  private handleGuestLeft = (roomId: string) => {
     this.guestLeftRoomAlert.onOkButtonPointerDown(() => {
       this.loadViewController(new HostRoomViewController(roomId));
     });
@@ -137,8 +137,8 @@ class TycoonViewController extends ViewController {
     socket.off("init-success", this.handleSocketInitSuccess);
     socket.off("update", this.handleSocketUpdate);
     socket.off("lose", this.handleSocketLose);
-    socket.off("host-left-game", this.handleHostLeftGame);
-    socket.off("guest-left-game", this.handleGuestLeftGame);
+    socket.off("host-left-game", this.handleHostLeft);
+    socket.off("guest-left-game", this.handleGuestLeft);
   }
 
   private handleActionButtonPointerDown = () => {
@@ -155,7 +155,19 @@ class TycoonViewController extends ViewController {
 
     const isPass = selectedCards.length === 0;
     if (isPass) {
-      this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.playedCards.forEach((cards) => {
+        cards.forEach((card) => {
+          anime({
+            targets: card,
+            x: 0,
+            rotation: Math.random() * Math.PI * 2,
+            easing: "easeOutQuad",
+            complete: () => {
+              this.removeChild(card);
+            },
+          });
+        });
+      });
       this.playedCards = [];
     } else if (this.tycoon.getPrevCards().length === 0) {
       this.playedCards.forEach((cards) => this.removeChild(...cards));
@@ -211,7 +223,19 @@ class TycoonViewController extends ViewController {
 
     const isPass = theirSelectedCards.length === 0;
     if (isPass || this.tycoon.getPrevCards().length === 0) {
-      this.playedCards.forEach((cards) => this.removeChild(...cards));
+      this.playedCards.forEach((cards) => {
+        cards.forEach((card) => {
+          anime({
+            targets: card,
+            x: 0,
+            rotation: Math.random() * Math.PI * 2,
+            easing: "easeOutQuad",
+            complete: () => {
+              this.removeChild(card);
+            },
+          });
+        });
+      });
       this.playedCards = [];
     } else {
       this.addChild(...theirSelectedCards);

@@ -36,8 +36,8 @@ class Alert extends Overlay {
 
   private draw() {
     this.addChild(this.frame);
-    this.frame.addChild(this.text);
-    this.frame.addChild(this.okButton);
+    this.addChild(this.text);
+    this.addChild(this.okButton);
   }
 
   private createFrame() {
@@ -60,14 +60,14 @@ class Alert extends Overlay {
 
   private layoutText() {
     this.text.anchor.set(0.5);
-    this.text.x = Alert.WIDTH / 2;
-    this.text.y = Alert.HEIGHT / 2 - Application.spacing(5);
+    this.text.x = Application.WIDTH / 2;
+    this.text.y = Application.HEIGHT / 2 - Application.spacing(5);
   }
 
   private layoutOkButton() {
     this.okButton.setCenterAsOrigin();
-    this.okButton.x = Alert.WIDTH / 2;
-    this.okButton.y = Alert.HEIGHT / 2 + Application.spacing(5);
+    this.okButton.x = Application.WIDTH / 2;
+    this.okButton.y = Application.HEIGHT / 2 + Application.spacing(5);
   }
 
   public onOkButtonPointerDown(cb: () => void) {
