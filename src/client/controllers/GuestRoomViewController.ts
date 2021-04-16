@@ -1,8 +1,8 @@
-import Alert from "../Alert";
+import Alert from "../views/Alert";
 import Application from "../Application";
-import LobbyViewController from "./LobbyViewController";
 import RoomViewController from "./RoomViewController";
-import Text from "../Text";
+import LobbyViewController from "./LobbyViewController";
+import Text from "../views/Text";
 
 class GuestRoomViewController extends RoomViewController {
   private static readonly PROMPT_TEXT_FONT_SIZE = 16;
@@ -25,7 +25,7 @@ class GuestRoomViewController extends RoomViewController {
 
   protected draw() {
     super.draw();
-    this.addChild(this.promptText);
+    this.addView(this.promptText);
   }
 
   protected addEventListeners() {
@@ -46,11 +46,11 @@ class GuestRoomViewController extends RoomViewController {
   }
 
   private handleSocketHostLeave() {
-    this.addChild(this.hostLeftRoomAlert);
+    this.addView(this.hostLeftRoomAlert);
   }
 
   private layoutPromptText() {
-    this.promptText.anchor.set(0.5);
+    this.promptText.setCenterAsOrigin();
     this.promptText.x = Application.WIDTH / 2;
     this.promptText.y = Application.HEIGHT / 2;
   }

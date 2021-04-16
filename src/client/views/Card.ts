@@ -1,6 +1,12 @@
 import * as PIXI from "pixi.js";
-import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
-import Color from "./Color";
+import {
+  CardJson,
+  CardSuit,
+  CardValue,
+  CardValueUtil,
+} from "../../common/Card";
+import Color from "../Color";
+import Frame from "./Frame";
 import Text from "./Text";
 import View from "./View";
 
@@ -15,7 +21,7 @@ class Card extends View {
   private suit: CardSuit;
   private selected: boolean;
 
-  private frame: PIXI.Graphics;
+  private frame: Frame;
   private text: Text;
 
   private handleSelect: (selected: boolean) => void;
@@ -29,18 +35,17 @@ class Card extends View {
 
     this.frame = this.createFrame();
     this.text = this.createText();
-
-    this.layout();
-    this.draw();
   }
 
-  private layout() {
+  protected layout() {
+    super.layout();
     this.layoutFrame();
   }
 
-  private draw() {
-    this.addChild(this.frame);
-    this.addChild(this.text);
+  protected draw() {
+    super.draw();
+    this.addView(this.frame);
+    this.addView(this.text);
   }
 
   private createText() {
@@ -51,10 +56,11 @@ class Card extends View {
   }
 
   private createFrame() {
-    const frame = new PIXI.Graphics();
-    frame.beginFill(Color.Black);
-    frame.drawRect(0, 0, Card.WIDTH, Card.HEIGHT);
-    frame.endFill();
+    const frame = new Frame({
+      width: Card.WIDTH,
+      height: Card.HEIGHT,
+      fill: Color.Black,
+    });
     frame.interactive = true;
     frame.hitArea = new PIXI.Rectangle(0, 0, Card.WIDTH, Card.HEIGHT);
     frame.on("pointerdown", this.handleFramePointerDown);

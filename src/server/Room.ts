@@ -75,7 +75,6 @@ class Room {
       });
 
       this.tycoon = new Tycoon(this.host, Object.values(this.guests)[0]);
-      this.tycoon.addEventListeners();
     });
 
     socket.on("options-update", (tycoonOptions: TycoonOptions) => {

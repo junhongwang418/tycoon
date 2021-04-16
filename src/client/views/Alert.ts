@@ -1,10 +1,10 @@
-import * as PIXI from "pixi.js";
-import Application from "./Application";
+import Application from "../Application";
 import Button from "./Button";
-import Color from "./Color";
-import Layout from "./Layout";
+import Layout from "../Layout";
 import Overlay from "./Overlay";
 import Text from "./Text";
+import Frame from "./Frame";
+import Color from "../Color";
 
 class Alert extends Overlay {
   private static get WIDTH() {
@@ -15,36 +15,33 @@ class Alert extends Overlay {
     return Application.HEIGHT / 2;
   }
 
-  private frame: PIXI.Graphics;
+  private frame: Frame;
   private text: Text;
   private okButton: Button;
 
   constructor(text: string) {
     super();
-    this.frame = this.createFrame();
+    this.frame = new Frame({
+      width: Alert.WIDTH,
+      height: Alert.HEIGHT,
+      border: Color.White,
+    });
     this.text = new Text(text);
     this.okButton = new Button("Ok");
-    this.layout();
-    this.draw();
   }
 
-  private layout() {
+  protected layout() {
+    super.layout();
     this.layoutFrame();
     this.layoutText();
     this.layoutOkButton();
   }
 
-  private draw() {
-    this.addChild(this.frame);
-    this.frame.addChild(this.text);
-    this.frame.addChild(this.okButton);
-  }
-
-  private createFrame() {
-    const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.White);
-    frame.drawRect(0, 0, Alert.WIDTH, Alert.HEIGHT);
-    return frame;
+  protected draw() {
+    super.draw();
+    this.addView(this.frame);
+    this.frame.addView(this.text);
+    this.frame.addView(this.okButton);
   }
 
   private layoutFrame() {
@@ -53,7 +50,7 @@ class Alert extends Overlay {
   }
 
   private layoutText() {
-    this.text.anchor.set(0.5);
+    this.text.setCenterAsOrigin();
     this.text.x = Alert.WIDTH / 2;
     this.text.y = Alert.HEIGHT / 2 - Layout.spacing(5);
   }

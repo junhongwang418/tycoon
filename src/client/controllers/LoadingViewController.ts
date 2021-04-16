@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import MenuViewController from "./MenuViewController";
-import Text from "../Text";
+import Text from "../views/Text";
 import ViewController from "./ViewController";
 import Application from "../Application";
 import Sound from "../Sound";
@@ -25,18 +25,18 @@ class LoadingViewController extends ViewController {
 
   protected draw() {
     super.draw();
-    this.addChild(this.loadingText);
-    this.addChild(this.percentageText);
+    this.addView(this.loadingText);
+    this.addView(this.percentageText);
   }
 
   private layoutLoadingText() {
-    this.loadingText.anchor.set(0.5);
+    this.loadingText.setCenterAsOrigin();
     this.loadingText.x = Application.WIDTH / 2;
     this.loadingText.y = Application.HEIGHT / 2 - Layout.spacing(4);
   }
 
   private layoutPercentageText() {
-    this.percentageText.anchor.set(0.5);
+    this.percentageText.setCenterAsOrigin();
     this.percentageText.x = Application.WIDTH / 2;
     this.percentageText.y = Application.HEIGHT / 2 + Layout.spacing(4);
   }
@@ -49,7 +49,7 @@ class LoadingViewController extends ViewController {
   }
 
   private handleLoaderProgress(loader: { progress: number }) {
-    this.percentageText.text = `${Math.round(loader.progress)}%`;
+    this.percentageText.updateText(`${Math.round(loader.progress)}%`);
   }
 
   private handleLoaderComplete() {

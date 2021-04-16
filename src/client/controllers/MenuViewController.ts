@@ -1,7 +1,7 @@
 import Application from "../Application";
-import Button from "../Button";
+import Button from "../views/Button";
 import LobbyViewController from "./LobbyViewController";
-import Text from "../Text";
+import Text from "../views/Text";
 import ViewController from "./ViewController";
 import Layout from "../Layout";
 
@@ -16,13 +16,15 @@ class MenuViewController extends ViewController {
   }
 
   protected layout() {
+    super.layout();
     this.layoutTitleText();
     this.layoutPlayButton();
   }
 
   protected draw() {
-    this.addChild(this.titleText);
-    this.addChild(this.playButton);
+    super.draw();
+    this.addView(this.titleText);
+    this.addView(this.playButton);
   }
 
   private createPlayButton() {
@@ -32,7 +34,7 @@ class MenuViewController extends ViewController {
   }
 
   private handlePlayButtonPointerDown = () => {
-    this.pushViewController(new LobbyViewController());
+    this.loadViewController(new LobbyViewController());
   };
 
   private layoutPlayButton() {
@@ -42,7 +44,7 @@ class MenuViewController extends ViewController {
   }
 
   private layoutTitleText() {
-    this.titleText.anchor.set(0.5);
+    this.titleText.setCenterAsOrigin();
     this.titleText.x = Application.WIDTH / 2;
     this.titleText.y = Application.HEIGHT / 2 - Layout.spacing(5);
   }

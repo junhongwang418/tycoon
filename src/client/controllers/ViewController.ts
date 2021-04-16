@@ -1,13 +1,15 @@
 import * as PIXI from "pixi.js";
 import Application from "../Application";
 import Color from "../Color";
-import View from "../View";
+import View from "../views/View";
 
 class ViewController extends PIXI.Container {
+  private initialized: boolean;
   protected background: PIXI.Graphics;
 
   constructor() {
     super();
+    this.initialized = false;
     this.background = this.createBackground();
   }
 
@@ -19,7 +21,11 @@ class ViewController extends PIXI.Container {
 
   protected addEventListeners() {}
 
-  protected removeEventListeners() {}
+  protected removeEventListeners() {
+    this.children.forEach((child) => {
+      if (child instanceof View) child.removeEventListeners();
+    });
+  }
 
   protected loadViewController(vc: ViewController) {
     this.removeEventListeners();
@@ -41,8 +47,8 @@ class ViewController extends PIXI.Container {
     vc.addEventListeners();
   }
 
-  private init() {
-    this.addChild(this.background);
+  public init() {
+    if (this.initialized) return;
     this.layout();
     this.draw();
     this.addEventListeners();
@@ -53,6 +59,25 @@ class ViewController extends PIXI.Container {
     frame.beginFill(Color.Black);
     frame.drawRect(0, 0, Application.WIDTH, Application.HEIGHT);
     return frame;
+  }
+
+  public addView(view: View) {
+    if (!view.isInitialized()) view.init();
+    this.addChild(view);
+    view.addEventListeners();
+  }
+
+  public addViews(...views: View[]) {
+    views.forEach((view) => this.addView(view));
+  }
+
+  public removeView(view: View) {
+    view.removeEventListeners();
+    this.removeChild(view);
+  }
+
+  public removeViews(...views: View[]) {
+    views.forEach((view) => this.removeView(view));
   }
 }
 

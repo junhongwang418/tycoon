@@ -6,7 +6,7 @@ import {
   TycoonStateKey,
   TycoonUtil,
 } from "../common/Tycoon";
-import Card from "./Card";
+import Card from "./views/Card";
 
 class Tycoon {
   private myTurn: number;

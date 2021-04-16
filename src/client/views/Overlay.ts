@@ -1,15 +1,19 @@
 import * as PIXI from "pixi.js";
-import Application from "./Application";
-import Color from "./Color";
+import Application from "../Application";
+import Color from "../Color";
 import View from "./View";
 
 class Overlay extends View {
-  private static readonly BACKGROUND_ALPHA = 0.92;
+  private static readonly BACKGROUND_ALPHA = 0.96;
   private firewall: PIXI.Graphics;
 
   constructor() {
     super();
     this.firewall = this.createFirewall();
+  }
+
+  protected draw() {
+    super.draw();
     this.addChild(this.firewall);
   }
 

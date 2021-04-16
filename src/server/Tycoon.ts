@@ -1,6 +1,7 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
 import Card from "./Card";
+import { SocketInitSuccessData } from "../common/Tycoon";
 
 class Tycoon {
   private player1Socket: Socket;
@@ -17,21 +18,27 @@ class Tycoon {
     cardDeck.shuffle();
     this.player1Cards = cardDeck.drawMany(16);
     this.player2Cards = cardDeck.drawMany(16);
+
+    this.addEventListeners();
   }
 
   public addEventListeners() {
     this.player1Socket.on("init", () => {
-      this.player1Socket.emit("init-success", {
+      const data: SocketInitSuccessData = {
         cardJsons: this.player1Cards.map((card) => card.toJson()),
         myTurn: 0,
-      });
+        numTheirCards: 16,
+      };
+      this.player1Socket.emit("init-success", data);
     });
 
     this.player2Socket.on("init", () => {
-      this.player2Socket.emit("init-success", {
+      const data: SocketInitSuccessData = {
         cardJsons: this.player2Cards.map((card) => card.toJson()),
         myTurn: 1,
-      });
+        numTheirCards: 16,
+      };
+      this.player2Socket.emit("init-success", data);
     });
 
     this.player1Socket.on("action", (selectedCardJsons) => {

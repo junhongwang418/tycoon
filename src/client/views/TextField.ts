@@ -1,8 +1,8 @@
-import * as PIXI from "pixi.js";
-import Color from "./Color";
+import Color from "../Color";
 import View from "./View";
-import Layout from "./Layout";
+import Layout from "../Layout";
 import Text from "./Text";
+import Frame from "./Frame";
 
 class TextField extends View {
   private static get PADDING() {
@@ -14,7 +14,7 @@ class TextField extends View {
   }
 
   private maxLength: number;
-  private frame: PIXI.Graphics;
+  private frame: Frame;
   private value: string;
   private valueText: Text;
 
@@ -24,45 +24,42 @@ class TextField extends View {
     this.frame = this.createFrame();
     this.value = "";
     this.valueText = new Text("");
-    this.addEventListeners();
-    this.layout();
-    this.draw();
   }
 
-  private layout() {
+  protected layout() {
+    super.layout();
     this.layoutValueText();
   }
 
-  private draw() {
-    this.addChild(this.frame);
-    this.addChild(this.valueText);
+  protected draw() {
+    super.draw();
+    this.addView(this.frame);
+    this.addView(this.valueText);
   }
 
   private createFrame() {
-    const frame = new PIXI.Graphics();
-    const text = new Text(" ".repeat(this.maxLength));
-    frame.lineStyle(1, Color.White);
-    frame.beginFill(Color.Black);
-    frame.drawRoundedRect(
-      0,
-      0,
-      text.width + TextField.PADDING * 2,
-      text.height + TextField.PADDING * 2,
-      TextField.CORNER_RADIUS
-    );
-    frame.endFill();
-    return frame;
+    const text = " ".repeat(this.maxLength);
+    const { width, height } = new Text(text).getTextSize();
+    return new Frame({
+      width: width + TextField.PADDING * 2,
+      height: height + TextField.PADDING * 2,
+      border: Color.White,
+      cornerRadius: TextField.CORNER_RADIUS,
+    });
   }
 
-  private addEventListeners() {
+  public addEventListeners() {
+    super.addEventListeners();
     window.addEventListener("keydown", this.handleKeyDown);
   }
 
   public removeEventListeners() {
+    super.removeEventListeners();
     window.removeEventListener("keydown", this.handleKeyDown);
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
+    console.log(e);
     if (!e.repeat) {
       if (e.key.length === 1) {
         this.value += e.key;
@@ -75,7 +72,7 @@ class TextField extends View {
   };
 
   private updateValueText() {
-    this.valueText.text = this.value;
+    this.valueText.updateText(this.value);
   }
 
   private layoutValueText() {

@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import Sound from "./Sound";
+import Sound from "../Sound";
 import Text from "./Text";
 
 class CheckMark extends Text {
@@ -15,7 +15,7 @@ class CheckMark extends Text {
     this.on("pointerdown", () => {
       this.checked = !this.checked;
       cb(this.checked);
-      this.text = this.checked ? "☑" : "☐";
+      this.updateText(this.checked ? "☑" : "☐");
       Sound.play("click1.ogg");
     });
   }

@@ -1,73 +1,14 @@
 import Application from "../Application";
-import Button from "../Button";
+import Button from "../views/Button";
 import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
-import Text from "../Text";
+import Text from "../views/Text";
 import ViewController from "./ViewController";
-import View from "../View";
-import {
-  TycoonOptionKey,
-  TycoonOptions,
-  TycoonUtil,
-} from "../../common/Tycoon";
+import { TycoonOptions, TycoonUtil } from "../../common/Tycoon";
 import TycoonViewController from "./TycoonViewController";
 import { DEFAULT_ROOM_CAPACITY, RoomJson } from "../../common/Room";
 import Layout from "../Layout";
-
-class TycoonOptionsView extends View {
-  private static readonly FONT_SIZE = 16;
-
-  private customSettingsText: Text;
-  private tycoonOptionTexts: Text[];
-
-  constructor(tycoonOptions: TycoonOptions) {
-    super();
-    this.customSettingsText = new Text("Custom Settings", {
-      fontSize: TycoonOptionsView.FONT_SIZE,
-    });
-    this.tycoonOptionTexts = this.createTycoonOptionTexts();
-    this.updateTycoonOptionTexts(tycoonOptions);
-
-    this.layout();
-    this.draw();
-  }
-
-  private layout() {
-    this.layoutOptionTexts();
-  }
-
-  private draw() {
-    this.addChild(this.customSettingsText);
-    this.addChild(...this.tycoonOptionTexts);
-  }
-
-  private createTycoonOptionTexts() {
-    const texts = [];
-    const optionKeys = Object.values(TycoonOptionKey);
-    optionKeys.forEach(() => {
-      texts.push(new Text("", { fontSize: TycoonOptionsView.FONT_SIZE }));
-    });
-    return texts;
-  }
-
-  private layoutOptionTexts() {
-    this.tycoonOptionTexts.forEach((text, index) => {
-      text.y =
-        this.customSettingsText.height +
-        Layout.spacing(2) +
-        Layout.spacing(2) * index;
-    });
-  }
-
-  public updateTycoonOptionTexts(tycoonOptions: TycoonOptions) {
-    const optionKeys = Object.values(TycoonOptionKey);
-    optionKeys.forEach((optionKey, index) => {
-      const text = this.tycoonOptionTexts[index];
-      const checked = tycoonOptions[optionKey];
-      text.text = `${optionKey.toString()}: ${checked ? "yes" : "no"}`;
-    });
-  }
-}
+import TycoonOptionsView from "../views/TycoonOptionsView";
 
 class RoomViewController extends ViewController {
   protected roomId: string;
@@ -105,10 +46,10 @@ class RoomViewController extends ViewController {
 
   protected draw() {
     super.draw();
-    this.addChild(this.roomText);
-    this.addChild(this.numPlayersText);
-    this.addChild(this.leaveButton);
-    this.addChild(this.tycoonOptionsView);
+    this.addView(this.roomText);
+    this.addView(this.numPlayersText);
+    this.addView(this.leaveButton);
+    this.addView(this.tycoonOptionsView);
   }
 
   protected addEventListeners() {
@@ -140,11 +81,14 @@ class RoomViewController extends ViewController {
   };
 
   private updateRoomNumPlayersText() {
-    this.numPlayersText.text = `${this.roomNumPlayers}/${this.roomCapacity} 👤`;
+    this.numPlayersText.updateText(
+      `${this.roomNumPlayers}/${this.roomCapacity} 👤`
+    );
+
     if (this.roomNumPlayers === this.roomCapacity) {
-      this.numPlayersText.tint = Color.Green;
+      this.numPlayersText.setTint(Color.Green);
     } else {
-      this.numPlayersText.tint = Color.Red;
+      this.numPlayersText.setTint(Color.Red);
     }
   }
 
@@ -154,22 +98,26 @@ class RoomViewController extends ViewController {
   }
 
   private layoutRoomText() {
-    this.roomText.anchor.set(0.5);
+    this.roomText.setCenterAsOrigin();
     this.roomText.x = Application.WIDTH / 2;
     this.roomText.y = Layout.spacing(5);
   }
 
   private layoutNumPlayersText() {
-    this.numPlayersText.anchor.set(0.5);
+    this.numPlayersText.setCenterAsOrigin();
     this.numPlayersText.x = Application.WIDTH / 2;
     this.numPlayersText.y =
-      Application.HEIGHT - this.numPlayersText.height - Layout.spacing(3);
+      Application.HEIGHT -
+      this.numPlayersText.getTextSize().height / 2 -
+      Layout.spacing(3);
   }
 
   private layoutLeaveButton() {
     this.leaveButton.x = Layout.spacing(3);
     this.leaveButton.y =
-      Application.HEIGHT - this.leaveButton.height - Layout.spacing(3);
+      Application.HEIGHT -
+      this.leaveButton.getSize().height -
+      Layout.spacing(3);
   }
 
   private createLeaveButton() {

@@ -37,6 +37,7 @@ export interface TycoonState {
 export interface SocketInitSuccessData {
   cardJsons: CardJson[];
   myTurn: number;
+  numTheirCards: number;
 }
 
 export class TycoonUtil {

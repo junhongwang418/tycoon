@@ -1,12 +1,13 @@
 enum Color {
-  White = 0xffffff,
-  Black = 0x000000,
-  Blue = 0x3581d8,
-  Grey = 0xbdc7c9,
+  White = 0xd6d6d6,
+  Black = 0x2e2e2e,
+  Blue = 0x6c99bb,
+  Grey = 0x797979,
   DarkGrey = 0x424642,
-  Green = 0x28cc2d,
-  Red = 0xd82e3f,
-  Yellow = 0xffe135,
+  Green = 0xb4d273,
+  Red = 0xb05279,
+  Yellow = 0xe5b567,
+  SpeechBubbleBackground = 0xffffff,
 }
 
 export default Color;

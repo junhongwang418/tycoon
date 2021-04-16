@@ -1,8 +1,7 @@
 import * as PIXI from "pixi.js";
-import Button from "../Button";
-import Card from "../Card";
-import Color from "../Color";
-import Text from "../Text";
+import Button from "../views/Button";
+import Card from "../views/Card";
+import Text from "../views/Text";
 import Application from "../Application";
 import ViewController from "./ViewController";
 import Sound from "../Sound";
@@ -10,107 +9,18 @@ import { CardJson, CardValueUtil } from "../../common/Card";
 import { TycoonOptions, SocketInitSuccessData } from "../../common/Tycoon";
 import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
-import Alert from "../Alert";
+import Alert from "../views/Alert";
 import Tycoon from "../Tycoon";
 import anime from "animejs";
-import View from "../View";
-import Speech from "../Speech";
+import Speech from "../views/Speech";
 import Layout from "../Layout";
-
-class PlayerView extends View {
-  private static readonly WIDTH = 128;
-  private static readonly HEIGHT = 128;
-
-  private numCardsLeft: number;
-
-  private frame: PIXI.Graphics;
-  private playerNameText: Text;
-  private numCardsLeftText: Text;
-  private turnIndicator: Text;
-
-  constructor(playerName: string) {
-    super();
-    this.numCardsLeft = 0;
-    this.frame = this.createFrame();
-    this.playerNameText = new Text(playerName, { fontSize: 16 });
-    this.numCardsLeftText = new Text("", { fontSize: 12 });
-    this.turnIndicator = new Text("🂠");
-
-    this.layout();
-    this.draw();
-  }
-
-  private layout() {
-    this.layoutNameText();
-    this.layoutNumCardsLeftText();
-    this.layoutTurnIndicator();
-  }
-
-  private layoutTurnIndicator() {
-    this.turnIndicator.anchor.set(0.5);
-    this.turnIndicator.x = PlayerView.WIDTH / 2;
-    this.turnIndicator.y =
-      PlayerView.HEIGHT - this.turnIndicator.height / 2 - Layout.spacing(1);
-    anime({
-      targets: this.turnIndicator,
-      rotation: Math.PI * 2,
-      loop: true,
-      easing: "easeInOutSine",
-      duration: 1200,
-    });
-  }
-
-  private layoutNumCardsLeftText() {
-    this.numCardsLeftText.anchor.set(0.5);
-    this.numCardsLeftText.x = PlayerView.WIDTH / 2;
-    this.numCardsLeftText.y =
-      this.playerNameText.y +
-      this.playerNameText.height / 2 +
-      this.numCardsLeftText.height / 2 +
-      Layout.spacing(1);
-  }
-
-  private layoutNameText() {
-    this.playerNameText.anchor.set(0.5);
-    this.playerNameText.x = PlayerView.WIDTH / 2;
-    this.playerNameText.y = this.playerNameText.height / 2 + Layout.spacing(1);
-  }
-
-  private draw() {
-    this.addChild(this.frame);
-    this.addChild(this.playerNameText);
-    this.addChild(this.numCardsLeftText);
-  }
-
-  private createFrame() {
-    const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.White);
-    frame.drawRect(0, 0, PlayerView.WIDTH, PlayerView.HEIGHT);
-    return frame;
-  }
-
-  public addTurnIndicator() {
-    this.addChild(this.turnIndicator);
-  }
-
-  public removeTurnIndicator() {
-    this.removeChild(this.turnIndicator);
-  }
-
-  public setNumCardsLeft(numCardsLeft: number) {
-    this.numCardsLeft = numCardsLeft;
-    this.numCardsLeftText.text = `Cards Left: ${numCardsLeft}`;
-  }
-
-  public getNumCardsLeft() {
-    return this.numCardsLeft;
-  }
-}
+import PlayerInfoView from "../views/PlayerInfoView";
 
 class TycoonViewController extends ViewController {
   private static readonly CARD_SELECTION_OFFSET_Y = 20;
 
   private tycoon: Tycoon;
+  private numTheirCards: number;
 
   private myCards: Card[];
   private playedCards: Card[][];
@@ -118,10 +28,9 @@ class TycoonViewController extends ViewController {
   private hostLeftRoomAlert: Alert;
   private guestLeftRoomAlert: Alert;
   private gameOverAlert: Alert;
-  private myView: PlayerView;
-  private theirView: PlayerView;
-  private theirSpeech: Speech;
-
+  private myInfoView: PlayerInfoView;
+  private theirInfoView: PlayerInfoView;
+  private theirPassSpeech: Speech;
   private trashText: Text;
 
   constructor(tycoonOptions: TycoonOptions) {
@@ -134,10 +43,10 @@ class TycoonViewController extends ViewController {
     this.hostLeftRoomAlert = this.createHostLeftRoomAlert();
     this.guestLeftRoomAlert = new Alert("The guest left the game :(");
     this.gameOverAlert = this.createGameOverAlert();
-    this.myView = new PlayerView("You");
-    this.theirView = new PlayerView("Them");
+    this.myInfoView = new PlayerInfoView("You");
+    this.theirInfoView = new PlayerInfoView("Them");
     this.trashText = new Text("🗑", { fontSize: 64 });
-    this.theirSpeech = new Speech("Pass");
+    this.theirPassSpeech = new Speech("Pass");
     this.enableInteraction();
   }
 
@@ -165,6 +74,7 @@ class TycoonViewController extends ViewController {
   }
 
   protected layout() {
+    super.layout();
     this.layoutActionButton();
     this.layoutMyView();
     this.layoutTheirView();
@@ -173,37 +83,42 @@ class TycoonViewController extends ViewController {
   }
 
   private layoutTheirSpeech() {
-    this.theirSpeech.setCenterAsOrigin();
-    this.theirSpeech.x =
-      this.theirView.x +
-      this.theirView.width / 2 +
-      this.theirSpeech.width / 2 +
+    this.theirPassSpeech.setCenterAsOrigin();
+    this.theirPassSpeech.x =
+      this.theirInfoView.x +
+      PlayerInfoView.WIDTH / 2 +
+      this.theirPassSpeech.getSize().width / 2 +
       Layout.spacing(2);
-    this.theirSpeech.y = this.theirSpeech.height / 2 + Layout.spacing(2);
+    this.theirPassSpeech.y =
+      this.theirPassSpeech.getSize().height / 2 + Layout.spacing(2);
   }
 
   private layoutTrashText() {
-    this.trashText.anchor.set(0.5);
-    this.trashText.x = this.trashText.width / 2 + Layout.spacing(2);
+    this.trashText.setCenterAsOrigin();
+    this.trashText.x =
+      this.trashText.getTextSize().width / 2 + Layout.spacing(2);
     this.trashText.y = Application.HEIGHT / 2;
   }
 
   private layoutMyView() {
-    this.myView.x = Layout.spacing(2);
-    this.myView.y = Application.HEIGHT - this.myView.height - Layout.spacing(2);
+    this.myInfoView.x = Layout.spacing(2);
+    this.myInfoView.y =
+      Application.HEIGHT - PlayerInfoView.HEIGHT - Layout.spacing(2);
   }
 
   private layoutTheirView() {
-    this.theirView.setCenterAsOrigin();
-    this.theirView.x = Application.WIDTH / 2;
-    this.theirView.y = this.theirView.height / 2 + Layout.spacing(2);
+    this.theirInfoView.setCenterAsOrigin();
+    this.theirInfoView.x = Application.WIDTH / 2;
+    this.theirInfoView.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
   }
 
   private layoutActionButton() {
     this.actionButton.x =
-      Application.WIDTH - this.actionButton.width - Layout.spacing(2);
+      Application.WIDTH - this.actionButton.getSize().width - Layout.spacing(2);
     this.actionButton.y =
-      Application.HEIGHT - this.actionButton.height - Layout.spacing(2);
+      Application.HEIGHT -
+      this.actionButton.getSize().height -
+      Layout.spacing(2);
   }
 
   protected addEventListeners() {
@@ -230,33 +145,34 @@ class TycoonViewController extends ViewController {
   };
 
   private handleHostLeft() {
-    this.addChild(this.hostLeftRoomAlert);
+    this.addView(this.hostLeftRoomAlert);
   }
 
   private handleGuestLeft(roomId: string) {
     this.guestLeftRoomAlert.onOk(() => {
       this.loadViewController(new HostRoomViewController(roomId));
     });
-    this.addChild(this.guestLeftRoomAlert);
+    this.addView(this.guestLeftRoomAlert);
   }
 
   private handleSocketInitSuccess(data: SocketInitSuccessData) {
-    const { cardJsons, myTurn } = data;
+    const { cardJsons, myTurn, numTheirCards } = data;
     this.tycoon.init(myTurn);
     this.myCards = this.createMyCardsFromCardJsons(cardJsons);
+    this.numTheirCards = numTheirCards;
     this.sortMyCards();
     this.drawMyCards();
-    this.addChild(this.actionButton);
+    this.addView(this.actionButton);
     this.update();
-    this.theirView.setNumCardsLeft(16);
   }
 
   private update() {
     this.layoutMyCards();
-    this.updatePlayerViews();
+    this.updatePlayerInfoViews();
     this.updateActionButton();
     this.updateMyCardsInteraction();
-    this.myView.setNumCardsLeft(this.myCards.length);
+    this.myInfoView.updateNumCardsLeftText(this.myCards.length);
+    this.theirInfoView.updateNumCardsLeftText(this.numTheirCards);
   }
 
   private createMyCardsFromCardJsons(jsons: CardJson[]) {
@@ -309,15 +225,15 @@ class TycoonViewController extends ViewController {
     } else {
       this.playedCards.push(selectedCards);
       selectedCards.forEach((card) => {
-        this.removeChild(card);
-        this.addChild(card);
+        this.removeView(card);
+        this.addView(card);
         card.disableSelection();
       });
       this.layoutSelectedCardsWithAnimation(selectedCards);
 
       if (this.tycoon.getPrevCards().length === 0) {
-        this.playedCards.forEach((cards) => this.removeChild(...cards));
-        this.removeChild(...selectedCards);
+        this.playedCards.forEach((cards) => this.removeViews(...cards));
+        this.removeViews(...selectedCards);
         this.playedCards = [];
       }
     }
@@ -327,7 +243,7 @@ class TycoonViewController extends ViewController {
     if (this.myCards.length === 0) {
       const socket = Application.shared.socket;
       socket.emit("win");
-      this.addChild(this.gameOverAlert);
+      this.addView(this.gameOverAlert);
     }
 
     this.update();
@@ -341,7 +257,7 @@ class TycoonViewController extends ViewController {
           x: this.trashText.x,
           rotation: Math.random() * Math.PI * 2,
           easing: "easeOutQuad",
-          complete: () => this.removeChild(card),
+          complete: () => this.removeView(card),
         });
       });
     });
@@ -365,36 +281,33 @@ class TycoonViewController extends ViewController {
   }
 
   private handleSocketLose() {
-    this.addChild(this.gameOverAlert);
+    this.addView(this.gameOverAlert);
   }
 
   private handleSocketUpdate(lastCardJsons: CardJson[]) {
     const theirSelectedCards = lastCardJsons.map((json) => {
       const card = Card.fromJson(json);
       card.setCenterAsOrigin();
-      card.x = this.theirView.x;
-      card.y = this.theirView.y;
+      card.x = this.theirInfoView.x;
+      card.y = this.theirInfoView.y;
       return card;
     });
 
     this.tycoon.play(theirSelectedCards);
+    this.numTheirCards -= theirSelectedCards.length;
 
     const isPass = theirSelectedCards.length === 0;
     if (isPass) {
       this.removePlayedCardsWithAnimation();
       this.showTheirSpeechWithAnimation(() => {
-        this.removeChild(this.theirSpeech);
+        this.removeView(this.theirPassSpeech);
       });
     } else {
-      this.theirView.setNumCardsLeft(
-        this.theirView.getNumCardsLeft() - theirSelectedCards.length
-      );
-
       if (this.tycoon.getPrevCards().length === 0) {
-        this.playedCards.forEach((cards) => this.removeChild(...cards));
+        this.playedCards.forEach((cards) => this.removeViews(...cards));
         this.playedCards = [];
       } else {
-        this.addChild(...theirSelectedCards);
+        this.addViews(...theirSelectedCards);
         this.layoutSelectedCardsWithAnimation(theirSelectedCards);
         this.playedCards.push(theirSelectedCards);
         Sound.play("cardPlace1.ogg");
@@ -405,17 +318,17 @@ class TycoonViewController extends ViewController {
   }
 
   private showTheirSpeechWithAnimation(onComplete: () => void) {
-    this.addChild(this.theirSpeech);
+    this.addView(this.theirPassSpeech);
 
     const obj = {
       scale: 0,
     };
-    this.theirSpeech.scale.set(0);
+    this.theirPassSpeech.scale.set(0);
     anime({
       targets: obj,
       scale: 1,
       update: () => {
-        this.theirSpeech.scale.set(obj.scale);
+        this.theirPassSpeech.scale.set(obj.scale);
       },
       complete: onComplete,
     });
@@ -429,13 +342,13 @@ class TycoonViewController extends ViewController {
     }
   }
 
-  private updatePlayerViews() {
+  private updatePlayerInfoViews() {
     if (this.tycoon.isMyTurn()) {
-      this.myView.addTurnIndicator();
-      this.theirView.removeTurnIndicator();
+      this.myInfoView.addTurnIndicator();
+      this.theirInfoView.removeTurnIndicator();
     } else {
-      this.myView.removeTurnIndicator();
-      this.theirView.addTurnIndicator();
+      this.myInfoView.removeTurnIndicator();
+      this.theirInfoView.addTurnIndicator();
     }
   }
 
@@ -470,13 +383,14 @@ class TycoonViewController extends ViewController {
   };
 
   protected draw() {
-    this.addChild(this.myView);
-    this.addChild(this.theirView);
-    this.addChild(this.trashText);
+    super.draw();
+    this.addView(this.myInfoView);
+    this.addView(this.theirInfoView);
+    this.addView(this.trashText);
   }
 
   private drawMyCards() {
-    this.addChild(...this.myCards);
+    this.addViews(...this.myCards);
   }
 
   private layoutMyCards() {
