@@ -7,7 +7,20 @@ import CheckMark from "../CheckMark";
 import { TycoonOptionKey } from "../../common/Tycoon";
 import Overlay from "../Overlay";
 import RoomViewController from "./RoomViewController";
-import { RoomJson } from "../../common/Room";
+import Layout from "../Layout";
+
+class TycoonOptionCheckMark extends CheckMark {
+  private optionKey: TycoonOptionKey;
+
+  constructor(optionKey: TycoonOptionKey) {
+    super({ fontSize: 36 });
+    this.optionKey = optionKey;
+  }
+
+  public onCheck(cb: (optionKey: TycoonOptionKey, checked: boolean) => void) {
+    this.onPointerDown((checked: boolean) => cb(this.optionKey, checked));
+  }
+}
 
 class TycoonOptionsEditor extends Overlay {
   private static get WIDTH() {
@@ -20,15 +33,10 @@ class TycoonOptionsEditor extends Overlay {
   private frame: PIXI.Graphics;
   private closeButton: Button;
   private tycoonOptionTexts: Text[];
-  private tycoonOptionCheckMarks: CheckMark[];
-  private handleCheckMarkPointerDown: (
-    optionKey: TycoonOptionKey,
-    checked: boolean
-  ) => void;
+  private tycoonOptionCheckMarks: TycoonOptionCheckMark[];
 
   constructor() {
     super();
-
     this.frame = this.createFrame();
     this.closeButton = this.createCloseButton();
     this.tycoonOptionTexts = this.createTycoonOptionTexts();
@@ -42,7 +50,7 @@ class TycoonOptionsEditor extends Overlay {
     const texts = [];
     const optionKeys = Object.values(TycoonOptionKey);
     optionKeys.forEach((optionKey) => {
-      texts.push(new Text(optionKey.toString(), { fill: Color.WHITE }));
+      texts.push(new Text(optionKey.toString()));
     });
     return texts;
   }
@@ -51,11 +59,7 @@ class TycoonOptionsEditor extends Overlay {
     const checkMarks = [];
     const optionKeys = Object.values(TycoonOptionKey);
     optionKeys.forEach((optionKey) => {
-      const checkMark = new CheckMark({ fill: Color.WHITE, fontSize: 36 });
-      checkMark.onPointerDown((checked: boolean) => {
-        this.handleCheckMarkPointerDown(optionKey, checked);
-      });
-      checkMarks.push(checkMark);
+      checkMarks.push(new TycoonOptionCheckMark(optionKey));
     });
     return checkMarks;
   }
@@ -66,26 +70,26 @@ class TycoonOptionsEditor extends Overlay {
     this.layoutOptionCheckMarks();
   }
 
+  private draw() {
+    this.addChild(this.frame);
+    this.frame.addChild(this.closeButton);
+    this.frame.addChild(...this.tycoonOptionTexts);
+    this.frame.addChild(...this.tycoonOptionCheckMarks);
+  }
+
   private layoutOptionTexts() {
     this.tycoonOptionTexts.forEach((text, index) => {
-      text.x = Application.spacing(2);
-      text.y = Application.spacing(4) + Application.spacing(5) * index;
+      text.x = Layout.spacing(2);
+      text.y = Layout.spacing(4) + Layout.spacing(5) * index;
     });
   }
 
   private layoutOptionCheckMarks() {
     this.tycoonOptionCheckMarks.forEach((checkMark, index) => {
       checkMark.x =
-        TycoonOptionsEditor.WIDTH - checkMark.width - Application.spacing(2);
-      checkMark.y = Application.spacing(4) + Application.spacing(5) * index;
+        TycoonOptionsEditor.WIDTH - checkMark.width - Layout.spacing(2);
+      checkMark.y = Layout.spacing(4) + Layout.spacing(5) * index;
     });
-  }
-
-  private draw() {
-    this.addChild(this.frame);
-    this.frame.addChild(this.closeButton);
-    this.frame.addChild(...this.tycoonOptionTexts);
-    this.frame.addChild(...this.tycoonOptionCheckMarks);
   }
 
   private layoutFrame() {
@@ -95,7 +99,7 @@ class TycoonOptionsEditor extends Overlay {
 
   private createFrame() {
     const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.WHITE);
+    frame.lineStyle(1, Color.White);
     frame.drawRect(0, 0, TycoonOptionsEditor.WIDTH, TycoonOptionsEditor.HEIGHT);
     frame.endFill();
     return frame;
@@ -113,7 +117,7 @@ class TycoonOptionsEditor extends Overlay {
   }
 
   public onUpdate(cb: (optionKey: TycoonOptionKey, checked: boolean) => void) {
-    this.handleCheckMarkPointerDown = cb;
+    this.tycoonOptionCheckMarks.forEach((checkMark) => checkMark.onCheck(cb));
   }
 }
 
@@ -141,23 +145,23 @@ class HostRoomViewController extends RoomViewController {
     this.addChild(this.settingsButton);
   }
 
-  protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
-    super.handleSocketRoomStatusUpdate(roomJson);
+  protected update() {
+    super.update();
     this.updateStartButton();
   }
 
   private createTycoonOptionsEditor() {
     const editor = new TycoonOptionsEditor();
-    editor.onUpdate(this.handleTycoonOptionsEditorUpdate.bind(this));
+    editor.onUpdate(this.handleTycoonOptionsEditorUpdate));
     return editor;
   }
 
-  private handleTycoonOptionsEditorUpdate(
+  private handleTycoonOptionsEditorUpdate = (
     optionKey: TycoonOptionKey,
     checked: boolean
-  ) {
+  ) => {
     this.tycoonOptions[optionKey] = checked;
-    this.tycoonOptionsView.setTycoonOptions(this.tycoonOptions);
+    this.updateTycoonOptionsView();
     const socket = Application.shared.socket;
     socket.emit("options-update", this.tycoonOptions);
   }
@@ -172,37 +176,37 @@ class HostRoomViewController extends RoomViewController {
 
   private createSettingsButton() {
     const button = new Button("⚙️");
-    button.onPointerDown(this.handleSettingsButtonPointerDown.bind(this));
+    button.onPointerDown(this.handleSettingsButtonPointerDown);
     return button;
   }
 
-  private handleSettingsButtonPointerDown() {
+  private handleSettingsButtonPointerDown = () => {
     this.addChild(this.tycoonOptionsEditor);
   }
 
   private createStartButton() {
     const button = new Button("start ▶");
     button.disable();
-    button.onPointerDown(this.handleStartButtonPointerDown.bind(this));
+    button.onPointerDown(this.handleStartButtonPointerDown);
     return button;
   }
 
-  private handleStartButtonPointerDown() {
+  private handleStartButtonPointerDown = () => {
     const socket = Application.shared.socket;
     socket.emit("start");
   }
 
   private layoutSettingsButton() {
     this.settingsButton.x =
-      Application.WIDTH - this.settingsButton.width - Application.spacing(3);
-    this.settingsButton.y = Application.spacing(3);
+      Application.WIDTH - this.settingsButton.width - Layout.spacing(3);
+    this.settingsButton.y = Layout.spacing(3);
   }
 
   private layoutStartButton() {
     this.startButton.x =
-      Application.WIDTH - this.startButton.width - Application.spacing(3);
+      Application.WIDTH - this.startButton.width - Layout.spacing(3);
     this.startButton.y =
-      Application.HEIGHT - this.startButton.height - Application.spacing(3);
+      Application.HEIGHT - this.startButton.height - Layout.spacing(3);
   }
 }
 

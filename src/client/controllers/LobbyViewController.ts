@@ -8,14 +8,15 @@ import HostRoomViewController from "./HostRoomViewController";
 import Overlay from "../Overlay";
 import GuestRoomViewController from "./GuestRoomViewController";
 import TextField from "../TextField";
+import Layout from "../Layout";
 
-class JoinRoomPopup extends Overlay {
+class JoinRoomOverlay extends Overlay {
   private static get WIDTH() {
     return Application.WIDTH / 2;
   }
 
   private static get HEIGHT() {
-    return Application.WIDTH / 2;
+    return Application.WIDTH / 3;
   }
 
   private frame: PIXI.Graphics;
@@ -23,18 +24,20 @@ class JoinRoomPopup extends Overlay {
   private roomIdTextField: TextField;
   private closeButton: Button;
   private joinButton: Button;
-  private handleCloseButtonPointerDown: () => void;
-  private handleJoinButtonPointerDown: (roomId: string) => void;
 
   constructor() {
     super();
     this.frame = this.createFrame();
     this.closeButton = this.createCloseButton();
-    this.joinButton = this.createJoinButton();
+    this.joinButton = new Button("Join");
     this.roomIdTextField = new TextField(5);
-    this.enterRoomIdText = new Text("Enter Room ID", { fill: Color.WHITE });
+    this.enterRoomIdText = new Text("Enter Room ID");
     this.layout();
     this.draw();
+  }
+
+  public onJoin(cb: (roomId: string) => void) {
+    this.joinButton.onPointerDown(() => cb(this.roomIdTextField.getValue()));
   }
 
   private layout() {
@@ -54,20 +57,20 @@ class JoinRoomPopup extends Overlay {
   }
 
   private layoutFrame() {
-    this.frame.x = (Application.WIDTH - JoinRoomPopup.WIDTH) / 2;
-    this.frame.y = (Application.HEIGHT - JoinRoomPopup.HEIGHT) / 2;
+    this.frame.x = (Application.WIDTH - JoinRoomOverlay.WIDTH) / 2;
+    this.frame.y = (Application.HEIGHT - JoinRoomOverlay.HEIGHT) / 2;
   }
 
   private layoutRoomIdTextField() {
     this.roomIdTextField.setCenterAsOrigin();
-    this.roomIdTextField.x = JoinRoomPopup.WIDTH / 2;
-    this.roomIdTextField.y = JoinRoomPopup.HEIGHT / 2 - Application.spacing(5);
+    this.roomIdTextField.x = JoinRoomOverlay.WIDTH / 2;
+    this.roomIdTextField.y = JoinRoomOverlay.HEIGHT / 2 - Layout.spacing(5);
   }
 
   private layoutEnterRoomIdText() {
     this.enterRoomIdText.anchor.set(0.5);
-    this.enterRoomIdText.x = JoinRoomPopup.WIDTH / 2;
-    this.enterRoomIdText.y = JoinRoomPopup.HEIGHT / 2 - Application.spacing(12);
+    this.enterRoomIdText.x = JoinRoomOverlay.WIDTH / 2;
+    this.enterRoomIdText.y = JoinRoomOverlay.HEIGHT / 2 - Layout.spacing(12);
   }
 
   private layoutCloseButton() {
@@ -76,73 +79,69 @@ class JoinRoomPopup extends Overlay {
 
   private layoutJoinButton() {
     this.joinButton.setCenterAsOrigin();
-    this.joinButton.x = JoinRoomPopup.WIDTH / 2;
-    this.joinButton.y = JoinRoomPopup.HEIGHT / 2 + Application.spacing(5);
-  }
-
-  private createJoinButton() {
-    const button = new Button("Join");
-    button.onPointerDown(() =>
-      this.handleJoinButtonPointerDown(this.roomIdTextField.getValue())
-    );
-    return button;
+    this.joinButton.x = JoinRoomOverlay.WIDTH / 2;
+    this.joinButton.y = JoinRoomOverlay.HEIGHT / 2 + Layout.spacing(5);
   }
 
   private createFrame() {
     const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.WHITE);
-    frame.drawRect(0, 0, JoinRoomPopup.WIDTH, JoinRoomPopup.HEIGHT);
+    frame.lineStyle(1, Color.White);
+    frame.drawRect(0, 0, JoinRoomOverlay.WIDTH, JoinRoomOverlay.HEIGHT);
     return frame;
   }
 
   private createCloseButton() {
     const button = new Button("❌");
-    button.onPointerDown(() => this.handleCloseButtonPointerDown());
+    button.onPointerDown(this.handleCloseButtonPointerDown);
     return button;
   }
 
-  public onClose(cb: () => void) {
-    this.handleCloseButtonPointerDown = cb;
-  }
-
-  public onJoin(cb: (roomId: string) => void) {
-    this.handleJoinButtonPointerDown = cb;
-  }
+  private handleCloseButtonPointerDown = () => {
+    this.parent.removeChild(this);
+  };
 }
 
 class LobbyViewController extends ViewController {
   private titleText: Text;
   private createRoomButton: Button;
+  private backButton: Button;
   private joinRoomButton: Button;
-  private joinRoomPopup: JoinRoomPopup;
+  private joinRoomOverlay: JoinRoomOverlay;
 
   constructor() {
     super();
-    this.titleText = new Text("💁 Lobby 💁", { fill: Color.WHITE });
+    this.titleText = new Text("💁 Lobby 💁");
     this.createRoomButton = this.createCreateRoomButton();
     this.joinRoomButton = this.createJoinRoomButton();
-    this.joinRoomPopup = this.createJoinRoomPopup();
+    this.joinRoomOverlay = this.createJoinRoomPopup();
+    this.backButton = this.createBackButton();
   }
 
   protected layout() {
+    super.layout();
     this.layoutTitleText();
     this.layoutCreateRoomButton();
     this.layoutJoinRoomButton();
+    this.layoutBackButton();
   }
 
   protected draw() {
+    super.draw();
     this.addChild(this.titleText);
     this.addChild(this.createRoomButton);
     this.addChild(this.joinRoomButton);
+    this.addChild(this.backButton);
   }
 
   protected addEventListeners() {
+    super.addEventListeners();
     const socket = Application.shared.socket;
     socket.on("create-room-success", this.handleSocketCreateRoomSuccess);
     socket.on("join-room-success", this.handleSocketJoinRoomSuccess);
   }
 
   protected removeEventListeners() {
+    super.removeEventListeners();
     const socket = Application.shared.socket;
     socket.off("create-room-success", this.handleSocketCreateRoomSuccess);
     socket.off("join-room-success", this.handleSocketJoinRoomSuccess);
@@ -151,13 +150,18 @@ class LobbyViewController extends ViewController {
   private layoutCreateRoomButton() {
     this.createRoomButton.setCenterAsOrigin();
     this.createRoomButton.x = Application.WIDTH / 2;
-    this.createRoomButton.y = Application.HEIGHT / 2 - Application.spacing(5);
+    this.createRoomButton.y = Application.HEIGHT / 2 - Layout.spacing(5);
   }
 
   private layoutJoinRoomButton() {
     this.joinRoomButton.setCenterAsOrigin();
     this.joinRoomButton.x = Application.WIDTH / 2;
-    this.joinRoomButton.y = Application.HEIGHT / 2 + Application.spacing(5);
+    this.joinRoomButton.y = Application.HEIGHT / 2 + Layout.spacing(5);
+  }
+
+  private layoutBackButton() {
+    this.backButton.x = Layout.spacing(1);
+    this.backButton.y = Layout.spacing(1);
   }
 
   private layoutTitleText() {
@@ -167,15 +171,20 @@ class LobbyViewController extends ViewController {
   }
 
   private createJoinRoomPopup() {
-    const popup = new JoinRoomPopup();
-    popup.onClose(() => {
-      this.removeChild(this.joinRoomPopup);
-    });
-    popup.onJoin((roomId: string) => {
-      const socket = Application.shared.socket;
-      socket.emit("join-room", roomId);
-    });
+    const popup = new JoinRoomOverlay();
+    popup.onJoin(this.handleJoin);
     return popup;
+  }
+
+  private handleJoin = (roomId: string) => {
+    const socket = Application.shared.socket;
+    socket.emit("join-room", roomId);
+  };
+
+  private createBackButton() {
+    const button = new Button("← Back");
+    button.onPointerDown(this.handleBackButtonPointerDown);
+    return button;
   }
 
   private createCreateRoomButton() {
@@ -190,13 +199,17 @@ class LobbyViewController extends ViewController {
     return button;
   }
 
+  private handleBackButtonPointerDown = () => {
+    this.popViewController();
+  };
+
   private handleCreateRoomButtonPointerDown = () => {
     const socket = Application.shared.socket;
     socket.emit("create-room");
   };
 
   private handleJoinRoomButtonPointerDown = () => {
-    this.addChild(this.joinRoomPopup);
+    this.addChild(this.joinRoomOverlay);
   };
 
   private handleSocketCreateRoomSuccess = (roomId: string) => {

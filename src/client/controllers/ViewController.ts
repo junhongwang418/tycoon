@@ -1,14 +1,25 @@
 import * as PIXI from "pixi.js";
 import Application from "../Application";
 import Color from "../Color";
+import View from "../View";
 
-abstract class ViewController extends PIXI.Container {
-  protected backgroundFrame: PIXI.Graphics;
+class ViewController extends PIXI.Container {
+  protected background: PIXI.Graphics;
 
   constructor() {
     super();
-    this.backgroundFrame = this.createBackgroundFrame();
+    this.background = this.createBackground();
   }
+
+  protected layout() {}
+
+  protected draw() {
+    this.addChild(this.background);
+  }
+
+  protected addEventListeners() {}
+
+  protected removeEventListeners() {}
 
   protected loadViewController(vc: ViewController) {
     this.removeEventListeners();
@@ -30,24 +41,16 @@ abstract class ViewController extends PIXI.Container {
     vc.addEventListeners();
   }
 
-  protected abstract layout();
-
-  protected abstract draw();
-
-  protected abstract addEventListeners();
-
-  protected abstract removeEventListeners();
-
   private init() {
-    this.addChild(this.backgroundFrame);
+    this.addChild(this.background);
     this.layout();
     this.draw();
     this.addEventListeners();
   }
 
-  private createBackgroundFrame() {
+  private createBackground() {
     const frame = new PIXI.Graphics();
-    frame.beginFill(Color.BLACK);
+    frame.beginFill(Color.Black);
     frame.drawRect(0, 0, Application.WIDTH, Application.HEIGHT);
     return frame;
   }

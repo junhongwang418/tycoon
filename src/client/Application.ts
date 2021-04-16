@@ -7,14 +7,7 @@ import WebFontLoader from "./WebFontLoader";
 class Application {
   public static readonly WIDTH = 800;
   public static readonly HEIGHT = 600;
-
-  public static spacing(count: number) {
-    return Application.SPACING * count;
-  }
-
   public static readonly shared = new Application();
-
-  private static readonly SPACING = 8;
 
   public readonly socket: SocketIOClient.Socket;
 
@@ -31,32 +24,36 @@ class Application {
   }
 
   public start() {
-    WebFontLoader.shared.onLoad(() => {
-      document.body.appendChild(this.app.view);
-      this.addViewController(new LoadingViewController());
-    });
+    WebFontLoader.shared.onLoad(this.handleWebFontLoad.bind(this));
   }
 
   public addViewController(vc: ViewController) {
-    this.app.stage.addChild(vc);
+    return this.app.stage.addChild(vc);
   }
 
   public removeViewController(vc: ViewController) {
-    this.app.stage.removeChild(vc);
+    return this.app.stage.removeChild(vc);
   }
 
   public removeAllViewControllers() {
-    this.app.stage.removeChildren();
+    return this.app.stage.removeChildren();
   }
 
   public removeTopViewController() {
-    this.app.stage.removeChildAt(this.app.stage.children.length - 1);
+    if (this.app.stage.children.length === 0) return null;
+    return this.app.stage.removeChildAt(this.app.stage.children.length - 1);
   }
 
   public getTopViewController() {
+    if (this.app.stage.children.length === 0) return null;
     return this.app.stage.getChildAt(
       this.app.stage.children.length - 1
     ) as ViewController;
+  }
+
+  private handleWebFontLoad() {
+    document.body.appendChild(this.app.view);
+    this.addViewController(new LoadingViewController());
   }
 }
 

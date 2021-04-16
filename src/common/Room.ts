@@ -6,3 +6,5 @@ export interface RoomJson {
   capacity: number;
   options: TycoonOptions;
 }
+
+export const DEFAULT_ROOM_CAPACITY = 2;

@@ -1,9 +1,9 @@
 import * as PIXI from "pixi.js";
 import Color from "./Color";
-import Container from "./Container";
+import View from "./View";
 import Text from "./Text";
 
-class Speech extends Container {
+class Speech extends View {
   private bubble: Text;
   private tape: PIXI.Graphics;
   private content: Text;
@@ -12,8 +12,10 @@ class Speech extends Container {
     super();
     this.bubble = new Text("💬", { fontSize: 128 });
     this.tape = this.createTape();
-    this.content = new Text(text, style);
-
+    this.content = new Text(text, {
+      fill: Color.Black,
+      ...style,
+    });
     this.layout();
     this.draw();
   }
@@ -21,6 +23,12 @@ class Speech extends Container {
   private layout() {
     this.layoutTape();
     this.layoutContent();
+  }
+
+  private draw() {
+    this.addChild(this.bubble);
+    this.addChild(this.tape);
+    this.addChild(this.content);
   }
 
   private layoutTape() {
@@ -34,15 +42,9 @@ class Speech extends Container {
     this.content.y = this.bubble.height / 2 - 16;
   }
 
-  private draw() {
-    this.addChild(this.bubble);
-    this.addChild(this.tape);
-    this.addChild(this.content);
-  }
-
   private createTape() {
     const frame = new PIXI.Graphics();
-    frame.beginFill(Color.WHITE);
+    frame.beginFill(Color.White);
     frame.drawRect(0, 0, 64, 16);
     frame.endFill();
     return frame;

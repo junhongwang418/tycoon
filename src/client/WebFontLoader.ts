@@ -3,7 +3,7 @@ class WebFontLoader {
 
   public static shared = new WebFontLoader();
 
-  public onLoad(callback: () => void) {
+  public onLoad(cb: () => void) {
     // web-font loader script will read WebFontConfig
     // to determine the fonts to load and what to do
     // next when all fonts are loaded
@@ -12,10 +12,7 @@ class WebFontLoader {
       google: {
         families: [WebFontLoader.FONT_FAMILY],
       },
-
-      active() {
-        callback();
-      },
+      active: cb,
     };
 
     this.includeWebFontLoaderScript();

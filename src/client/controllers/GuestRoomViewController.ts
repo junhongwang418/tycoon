@@ -1,20 +1,19 @@
 import Alert from "../Alert";
 import Application from "../Application";
-import Color from "../Color";
 import LobbyViewController from "./LobbyViewController";
 import RoomViewController from "./RoomViewController";
 import Text from "../Text";
-import { RoomJson } from "../../common/Room";
 
 class GuestRoomViewController extends RoomViewController {
+  private static readonly PROMPT_TEXT_FONT_SIZE = 16;
+
   private promptText: Text;
   private hostLeftRoomAlert: Alert;
 
   constructor(roomId: string) {
     super(roomId);
     this.promptText = new Text("Waiting for the host to start the game...", {
-      fontSize: 16,
-      fill: Color.WHITE,
+      fontSize: GuestRoomViewController.PROMPT_TEXT_FONT_SIZE,
     });
     this.hostLeftRoomAlert = this.createHostLeftRoomAlert();
   }
@@ -29,11 +28,6 @@ class GuestRoomViewController extends RoomViewController {
     this.addChild(this.promptText);
   }
 
-  protected handleSocketRoomStatusUpdate(roomJson: RoomJson) {
-    super.handleSocketRoomStatusUpdate(roomJson);
-    this.tycoonOptionsView.setTycoonOptions(roomJson.options);
-  }
-
   protected addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
@@ -44,6 +38,11 @@ class GuestRoomViewController extends RoomViewController {
     super.removeEventListeners();
     const socket = Application.shared.socket;
     socket.off("host-left");
+  }
+
+  protected update() {
+    super.update();
+    this.updateTycoonOptionsView();
   }
 
   private handleSocketHostLeave() {
@@ -58,13 +57,13 @@ class GuestRoomViewController extends RoomViewController {
 
   private createHostLeftRoomAlert() {
     const alert = new Alert("The host left the room :(");
-    alert.onOkButtonPointerDown(this.handleHostLeftRoomAlertOk.bind(this));
+    alert.onOk(this.handleHostLeftRoomAlertOk);
     return alert;
   }
 
-  private handleHostLeftRoomAlertOk() {
+  private handleHostLeftRoomAlertOk = () => {
     this.loadViewController(new LobbyViewController());
-  }
+  };
 }
 
 export default GuestRoomViewController;

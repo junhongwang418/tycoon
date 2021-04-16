@@ -1,21 +1,21 @@
 import * as PIXI from "pixi.js";
 import Application from "./Application";
 import Color from "./Color";
-import Container from "./Container";
+import View from "./View";
 
-class Overlay extends Container {
+class Overlay extends View {
   private static readonly BACKGROUND_ALPHA = 0.92;
-  private interactionWall: PIXI.Graphics;
+  private firewall: PIXI.Graphics;
 
   constructor() {
     super();
-    this.interactionWall = this.createInteractionWall();
-    this.addChild(this.interactionWall);
+    this.firewall = this.createFirewall();
+    this.addChild(this.firewall);
   }
 
-  private createInteractionWall() {
+  private createFirewall() {
     const frame = new PIXI.Graphics();
-    frame.beginFill(Color.BLACK, Overlay.BACKGROUND_ALPHA);
+    frame.beginFill(Color.Black, Overlay.BACKGROUND_ALPHA);
     frame.drawRect(0, 0, Application.WIDTH, Application.HEIGHT);
     frame.endFill();
     frame.interactive = true;
@@ -25,11 +25,11 @@ class Overlay extends Container {
       Application.WIDTH,
       Application.HEIGHT
     );
-    frame.on("pointerdown", this.handleInteractionWallPointerDown);
+    frame.on("pointerdown", this.handleFirewallPointerDown);
     return frame;
   }
 
-  private handleInteractionWallPointerDown = (e: PIXI.InteractionEvent) => {
+  private handleFirewallPointerDown = (e: PIXI.InteractionEvent) => {
     e.stopPropagation();
   };
 }

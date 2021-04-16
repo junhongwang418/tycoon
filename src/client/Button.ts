@@ -1,10 +1,15 @@
 import * as PIXI from "pixi.js";
 import Color from "./Color";
-import Container from "./Container";
+import View from "./View";
 import Sound from "./Sound";
 import Text from "./Text";
 
-class Button extends Container {
+interface Size {
+  width: number;
+  height: number;
+}
+
+class Button extends View {
   private static readonly PADDING = 8;
 
   private text: Text;
@@ -14,11 +19,36 @@ class Button extends Container {
 
   constructor(text: string) {
     super();
-    this.text = new Text(text, { fill: Color.WHITE });
-    this.frame = new PIXI.Graphics();
+    this.text = new Text(text);
+    this.frame = this.createFrame();
     this.enableInteraction();
     this.addEventListeners();
+    this.layout();
     this.draw();
+  }
+
+  private layout() {
+    this.layoutText();
+  }
+
+  private draw() {
+    this.addChild(this.frame);
+    this.addChild(this.text);
+  }
+
+  private createFrame() {
+    const size = this.calculateFrameSize();
+    const frame = new PIXI.Graphics();
+    frame.lineStyle(1, Color.White);
+    frame.beginFill(Color.Black);
+    frame.drawRect(0, 0, size.width, size.height);
+    frame.endFill();
+    return frame;
+  }
+
+  private layoutText() {
+    this.text.x = Button.PADDING;
+    this.text.y = Button.PADDING;
   }
 
   private addEventListeners() {
@@ -31,55 +61,22 @@ class Button extends Container {
   }
 
   private handlePointerOver = () => {
-    this.frame.tint = Color.GREY;
-    this.text.tint = Color.GREY;
+    this.setTint(Color.Grey);
   };
 
   private handlePointerOut = () => {
-    this.frame.tint = Color.WHITE;
-    this.text.tint = Color.WHITE;
+    this.setTint(Color.White);
   };
 
-  private draw() {
-    this.drawFrame();
-    this.drawText();
-  }
-
-  private drawFrame() {
-    this.frame.lineStyle(1, Color.WHITE);
-    this.frame.beginFill(Color.BLACK);
-
-    const size = this.calculateSize();
-    this.frame.drawRect(0, 0, size.width, size.height);
-
-    this.frame.endFill();
-
-    this.addChild(this.frame);
-  }
-
-  private undrawFrame() {
-    this.removeChild(this.frame);
-  }
-
-  private calculateSize(): { width: number; height: number } {
+  private calculateFrameSize(): Size {
     return {
       width: this.text.width + Button.PADDING * 2,
       height: this.text.height + Button.PADDING * 2,
     };
   }
 
-  private drawText() {
-    this.text.x = Button.PADDING;
-    this.text.y = Button.PADDING;
-    this.addChild(this.text);
-  }
-
-  private undrawText() {
-    this.removeChild(this.text);
-  }
-
   private defineHitArea() {
-    const size = this.calculateSize();
+    const size = this.calculateFrameSize();
     this.hitArea = new PIXI.Rectangle(0, 0, size.width, size.height);
   }
 
@@ -90,14 +87,17 @@ class Button extends Container {
 
   public enable() {
     this.interactive = true;
-    this.frame.tint = Color.WHITE;
-    this.text.tint = Color.WHITE;
+    this.setTint(Color.White);
   }
 
   public disable() {
     this.interactive = false;
-    this.frame.tint = Color.DARK_GREY;
-    this.text.tint = Color.DARK_GREY;
+    this.setTint(Color.DarkGrey);
+  }
+
+  public setTint(color: Color) {
+    this.frame.tint = color;
+    this.text.tint = color;
   }
 
   public onPointerDown(cb: () => void) {
@@ -105,16 +105,11 @@ class Button extends Container {
   }
 
   public updateText(text: string) {
-    this.undrawFrame();
-    this.undrawText();
+    this.removeChild(this.frame, this.text);
     this.text.text = text;
     this.defineHitArea();
-    this.drawFrame();
-    this.drawText();
-
-    if (this.isOriginCenter) {
-      this.setCenterAsOriginBasedOnCurrentSize();
-    }
+    this.addChild(this.frame, this.text);
+    if (this.isCenterOrigin) this.setCenterAsOriginBasedOnCurrentSize();
   }
 }
 

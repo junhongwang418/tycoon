@@ -1,16 +1,16 @@
 import * as PIXI from "pixi.js";
-import Application from "./Application";
 import Color from "./Color";
-import Container from "./Container";
+import View from "./View";
+import Layout from "./Layout";
 import Text from "./Text";
 
-class TextField extends Container {
+class TextField extends View {
   private static get PADDING() {
-    return Application.spacing(1);
+    return Layout.spacing(1);
   }
 
   private static get CORNER_RADIUS() {
-    return Application.spacing(1);
+    return Layout.spacing(1);
   }
 
   private maxLength: number;
@@ -23,12 +23,10 @@ class TextField extends Container {
     this.maxLength = maxLength;
     this.frame = this.createFrame();
     this.value = "";
-    this.valueText = new Text("", { fill: Color.WHITE });
-
+    this.valueText = new Text("");
+    this.addEventListeners();
     this.layout();
     this.draw();
-
-    this.addEventListeners();
   }
 
   private layout() {
@@ -43,8 +41,8 @@ class TextField extends Container {
   private createFrame() {
     const frame = new PIXI.Graphics();
     const text = new Text(" ".repeat(this.maxLength));
-    frame.lineStyle(1, Color.WHITE);
-    frame.beginFill(Color.BLACK);
+    frame.lineStyle(1, Color.White);
+    frame.beginFill(Color.Black);
     frame.drawRoundedRect(
       0,
       0,
@@ -57,18 +55,24 @@ class TextField extends Container {
   }
 
   private addEventListeners() {
-    window.addEventListener("keydown", (e) => {
-      if (!e.repeat) {
-        if (e.key.length === 1) {
-          this.value += e.key;
-          this.value = this.value.slice(0, this.maxLength);
-        } else if (e.key === "Backspace") {
-          this.value = this.value.slice(0, -1);
-        }
-        this.updateValueText();
-      }
-    });
+    window.addEventListener("keydown", this.handleKeyDown);
   }
+
+  public removeEventListeners() {
+    window.removeEventListener("keydown", this.handleKeyDown);
+  }
+
+  private handleKeyDown = (e: KeyboardEvent) => {
+    if (!e.repeat) {
+      if (e.key.length === 1) {
+        this.value += e.key;
+        this.value = this.value.slice(0, this.maxLength);
+      } else if (e.key === "Backspace") {
+        this.value = this.value.slice(0, -1);
+      }
+      this.updateValueText();
+    }
+  };
 
   private updateValueText() {
     this.valueText.text = this.value;

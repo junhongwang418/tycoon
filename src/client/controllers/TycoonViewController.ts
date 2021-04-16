@@ -13,10 +13,11 @@ import HostRoomViewController from "./HostRoomViewController";
 import Alert from "../Alert";
 import Tycoon from "../Tycoon";
 import anime from "animejs";
-import Container from "../Container";
+import View from "../View";
 import Speech from "../Speech";
+import Layout from "../Layout";
 
-class PlayerView extends Container {
+class PlayerView extends View {
   private static readonly WIDTH = 128;
   private static readonly HEIGHT = 128;
 
@@ -31,15 +32,10 @@ class PlayerView extends Container {
     super();
     this.numCardsLeft = 0;
     this.frame = this.createFrame();
-    this.playerNameText = new Text(playerName, {
-      fill: Color.WHITE,
-      fontSize: 16,
-    });
-    this.numCardsLeftText = new Text("", {
-      fill: Color.WHITE,
-      fontSize: 12,
-    });
-    this.turnIndicator = new Text("🂠", { fill: Color.WHITE });
+    this.playerNameText = new Text(playerName, { fontSize: 16 });
+    this.numCardsLeftText = new Text("", { fontSize: 12 });
+    this.turnIndicator = new Text("🂠");
+
     this.layout();
     this.draw();
   }
@@ -54,9 +50,7 @@ class PlayerView extends Container {
     this.turnIndicator.anchor.set(0.5);
     this.turnIndicator.x = PlayerView.WIDTH / 2;
     this.turnIndicator.y =
-      PlayerView.HEIGHT -
-      this.turnIndicator.height / 2 -
-      Application.spacing(1);
+      PlayerView.HEIGHT - this.turnIndicator.height / 2 - Layout.spacing(1);
     anime({
       targets: this.turnIndicator,
       rotation: Math.PI * 2,
@@ -73,14 +67,13 @@ class PlayerView extends Container {
       this.playerNameText.y +
       this.playerNameText.height / 2 +
       this.numCardsLeftText.height / 2 +
-      Application.spacing(1);
+      Layout.spacing(1);
   }
 
   private layoutNameText() {
     this.playerNameText.anchor.set(0.5);
     this.playerNameText.x = PlayerView.WIDTH / 2;
-    this.playerNameText.y =
-      this.playerNameText.height / 2 + Application.spacing(1);
+    this.playerNameText.y = this.playerNameText.height / 2 + Layout.spacing(1);
   }
 
   private draw() {
@@ -91,7 +84,7 @@ class PlayerView extends Container {
 
   private createFrame() {
     const frame = new PIXI.Graphics();
-    frame.lineStyle(1, Color.WHITE);
+    frame.lineStyle(1, Color.White);
     frame.drawRect(0, 0, PlayerView.WIDTH, PlayerView.HEIGHT);
     return frame;
   }
@@ -143,7 +136,7 @@ class TycoonViewController extends ViewController {
     this.gameOverAlert = this.createGameOverAlert();
     this.myView = new PlayerView("You");
     this.theirView = new PlayerView("Them");
-    this.trashText = new Text("🗑", { fill: Color.WHITE, fontSize: 64 });
+    this.trashText = new Text("🗑", { fontSize: 64 });
     this.theirSpeech = new Speech("Pass");
     this.enableInteraction();
   }
@@ -160,9 +153,7 @@ class TycoonViewController extends ViewController {
 
   private createGameOverAlert() {
     const alert = new Alert("Game Over");
-    alert.onOkButtonPointerDown(() => {
-      this.popViewController();
-    });
+    alert.onOk(() => this.popViewController());
     return alert;
   }
 
@@ -187,33 +178,32 @@ class TycoonViewController extends ViewController {
       this.theirView.x +
       this.theirView.width / 2 +
       this.theirSpeech.width / 2 +
-      Application.spacing(2);
-    this.theirSpeech.y = this.theirSpeech.height / 2 + Application.spacing(2);
+      Layout.spacing(2);
+    this.theirSpeech.y = this.theirSpeech.height / 2 + Layout.spacing(2);
   }
 
   private layoutTrashText() {
     this.trashText.anchor.set(0.5);
-    this.trashText.x = this.trashText.width / 2 + Application.spacing(2);
+    this.trashText.x = this.trashText.width / 2 + Layout.spacing(2);
     this.trashText.y = Application.HEIGHT / 2;
   }
 
   private layoutMyView() {
-    this.myView.x = Application.spacing(2);
-    this.myView.y =
-      Application.HEIGHT - this.myView.height - Application.spacing(2);
+    this.myView.x = Layout.spacing(2);
+    this.myView.y = Application.HEIGHT - this.myView.height - Layout.spacing(2);
   }
 
   private layoutTheirView() {
     this.theirView.setCenterAsOrigin();
     this.theirView.x = Application.WIDTH / 2;
-    this.theirView.y = this.theirView.height / 2 + Application.spacing(2);
+    this.theirView.y = this.theirView.height / 2 + Layout.spacing(2);
   }
 
   private layoutActionButton() {
     this.actionButton.x =
-      Application.WIDTH - this.actionButton.width - Application.spacing(2);
+      Application.WIDTH - this.actionButton.width - Layout.spacing(2);
     this.actionButton.y =
-      Application.HEIGHT - this.actionButton.height - Application.spacing(2);
+      Application.HEIGHT - this.actionButton.height - Layout.spacing(2);
   }
 
   protected addEventListeners() {
@@ -231,7 +221,7 @@ class TycoonViewController extends ViewController {
 
   private createHostLeftRoomAlert() {
     const alert = new Alert("The host left the game :(");
-    alert.onOkButtonPointerDown(this.handleHostLeftRoomAlertOk);
+    alert.onOk(this.handleHostLeftRoomAlertOk);
     return alert;
   }
 
@@ -244,7 +234,7 @@ class TycoonViewController extends ViewController {
   }
 
   private handleGuestLeft(roomId: string) {
-    this.guestLeftRoomAlert.onOkButtonPointerDown(() => {
+    this.guestLeftRoomAlert.onOk(() => {
       this.loadViewController(new HostRoomViewController(roomId));
     });
     this.addChild(this.guestLeftRoomAlert);
@@ -365,8 +355,8 @@ class TycoonViewController extends ViewController {
         targets: card,
         x:
           Application.WIDTH / 2 -
-          (Application.spacing(2) * (cards.length - 1)) / 2 +
-          Application.spacing(2) * i,
+          (Layout.spacing(2) * (cards.length - 1)) / 2 +
+          Layout.spacing(2) * i,
         y: Application.HEIGHT / 2,
         rotation: Math.random() * Math.PI * 2,
         easing: "easeOutQuad",

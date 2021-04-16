@@ -2,9 +2,9 @@ import * as PIXI from "pixi.js";
 import { CardJson, CardSuit, CardValue, CardValueUtil } from "../common/Card";
 import Color from "./Color";
 import Text from "./Text";
-import Container from "./Container";
+import View from "./View";
 
-class Card extends Container {
+class Card extends View {
   private static readonly FONT_SIZE = 128;
   private static readonly WIDTH = 78;
   private static readonly HEIGHT = 103.5;
@@ -13,7 +13,6 @@ class Card extends Container {
 
   private value: CardValue;
   private suit: CardSuit;
-
   private selected: boolean;
 
   private frame: PIXI.Graphics;
@@ -28,11 +27,8 @@ class Card extends Container {
     this.suit = suit;
     this.selected = false;
 
-    this.text = new Text(Card.toText(value, suit), {
-      fill: Card.toColor(suit),
-      fontSize: Card.FONT_SIZE,
-    });
     this.frame = this.createFrame();
+    this.text = this.createText();
 
     this.layout();
     this.draw();
@@ -47,9 +43,16 @@ class Card extends Container {
     this.addChild(this.text);
   }
 
+  private createText() {
+    return new Text(this.toString(), {
+      fill: this.toColor(),
+      fontSize: Card.FONT_SIZE,
+    });
+  }
+
   private createFrame() {
     const frame = new PIXI.Graphics();
-    frame.beginFill(Color.BLACK);
+    frame.beginFill(Color.Black);
     frame.drawRect(0, 0, Card.WIDTH, Card.HEIGHT);
     frame.endFill();
     frame.interactive = true;
@@ -80,80 +83,129 @@ class Card extends Container {
     this.handleSelect = cb;
   }
 
-  private static toText(value: CardValue, suit: CardSuit) {
-    if (value === CardValue.Ace && suit === CardSuit.Spade) return "🂡";
-    if (value === CardValue.Two && suit === CardSuit.Spade) return "🂢";
-    if (value === CardValue.Three && suit === CardSuit.Spade) return "🂣";
-    if (value === CardValue.Four && suit === CardSuit.Spade) return "🂤";
-    if (value === CardValue.Five && suit === CardSuit.Spade) return "🂥";
-    if (value === CardValue.Six && suit === CardSuit.Spade) return "🂦";
-    if (value === CardValue.Seven && suit === CardSuit.Spade) return "🂧";
-    if (value === CardValue.Eight && suit === CardSuit.Spade) return "🂨";
-    if (value === CardValue.Nine && suit === CardSuit.Spade) return "🂩";
-    if (value === CardValue.Ten && suit === CardSuit.Spade) return "🂪";
-    if (value === CardValue.Jack && suit === CardSuit.Spade) return "🂫";
-    if (value === CardValue.Queen && suit === CardSuit.Spade) return "🂭";
-    if (value === CardValue.King && suit === CardSuit.Spade) return "🂮";
+  private toString() {
+    if (this.value === CardValue.Ace && this.suit === CardSuit.Spade)
+      return "🂡";
+    if (this.value === CardValue.Two && this.suit === CardSuit.Spade)
+      return "🂢";
+    if (this.value === CardValue.Three && this.suit === CardSuit.Spade)
+      return "🂣";
+    if (this.value === CardValue.Four && this.suit === CardSuit.Spade)
+      return "🂤";
+    if (this.value === CardValue.Five && this.suit === CardSuit.Spade)
+      return "🂥";
+    if (this.value === CardValue.Six && this.suit === CardSuit.Spade)
+      return "🂦";
+    if (this.value === CardValue.Seven && this.suit === CardSuit.Spade)
+      return "🂧";
+    if (this.value === CardValue.Eight && this.suit === CardSuit.Spade)
+      return "🂨";
+    if (this.value === CardValue.Nine && this.suit === CardSuit.Spade)
+      return "🂩";
+    if (this.value === CardValue.Ten && this.suit === CardSuit.Spade)
+      return "🂪";
+    if (this.value === CardValue.Jack && this.suit === CardSuit.Spade)
+      return "🂫";
+    if (this.value === CardValue.Queen && this.suit === CardSuit.Spade)
+      return "🂭";
+    if (this.value === CardValue.King && this.suit === CardSuit.Spade)
+      return "🂮";
 
-    if (value === CardValue.Ace && suit === CardSuit.Heart) return "🂱";
-    if (value === CardValue.Two && suit === CardSuit.Heart) return "🂲";
-    if (value === CardValue.Three && suit === CardSuit.Heart) return "🂳";
-    if (value === CardValue.Four && suit === CardSuit.Heart) return "🂴";
-    if (value === CardValue.Five && suit === CardSuit.Heart) return "🂵";
-    if (value === CardValue.Six && suit === CardSuit.Heart) return "🂶";
-    if (value === CardValue.Seven && suit === CardSuit.Heart) return "🂷";
-    if (value === CardValue.Eight && suit === CardSuit.Heart) return "🂸";
-    if (value === CardValue.Nine && suit === CardSuit.Heart) return "🂹";
-    if (value === CardValue.Ten && suit === CardSuit.Heart) return "🂺";
-    if (value === CardValue.Jack && suit === CardSuit.Heart) return "🂻";
-    if (value === CardValue.Queen && suit === CardSuit.Heart) return "🂽";
-    if (value === CardValue.King && suit === CardSuit.Heart) return "🂾";
+    if (this.value === CardValue.Ace && this.suit === CardSuit.Heart)
+      return "🂱";
+    if (this.value === CardValue.Two && this.suit === CardSuit.Heart)
+      return "🂲";
+    if (this.value === CardValue.Three && this.suit === CardSuit.Heart)
+      return "🂳";
+    if (this.value === CardValue.Four && this.suit === CardSuit.Heart)
+      return "🂴";
+    if (this.value === CardValue.Five && this.suit === CardSuit.Heart)
+      return "🂵";
+    if (this.value === CardValue.Six && this.suit === CardSuit.Heart)
+      return "🂶";
+    if (this.value === CardValue.Seven && this.suit === CardSuit.Heart)
+      return "🂷";
+    if (this.value === CardValue.Eight && this.suit === CardSuit.Heart)
+      return "🂸";
+    if (this.value === CardValue.Nine && this.suit === CardSuit.Heart)
+      return "🂹";
+    if (this.value === CardValue.Ten && this.suit === CardSuit.Heart)
+      return "🂺";
+    if (this.value === CardValue.Jack && this.suit === CardSuit.Heart)
+      return "🂻";
+    if (this.value === CardValue.Queen && this.suit === CardSuit.Heart)
+      return "🂽";
+    if (this.value === CardValue.King && this.suit === CardSuit.Heart)
+      return "🂾";
 
-    if (value === CardValue.Ace && suit === CardSuit.Diamond) return "🃁";
-    if (value === CardValue.Two && suit === CardSuit.Diamond) return "🃂";
-    if (value === CardValue.Three && suit === CardSuit.Diamond) return "🃃";
-    if (value === CardValue.Four && suit === CardSuit.Diamond) return "🃄";
-    if (value === CardValue.Five && suit === CardSuit.Diamond) return "🃅";
-    if (value === CardValue.Six && suit === CardSuit.Diamond) return "🃆";
-    if (value === CardValue.Seven && suit === CardSuit.Diamond) return "🃇";
-    if (value === CardValue.Eight && suit === CardSuit.Diamond) return "🃈";
-    if (value === CardValue.Nine && suit === CardSuit.Diamond) return "🃉";
-    if (value === CardValue.Ten && suit === CardSuit.Diamond) return "🃊";
-    if (value === CardValue.Jack && suit === CardSuit.Diamond) return "🃋";
-    if (value === CardValue.Queen && suit === CardSuit.Diamond) return "🃍";
-    if (value === CardValue.King && suit === CardSuit.Diamond) return "🃎";
+    if (this.value === CardValue.Ace && this.suit === CardSuit.Diamond)
+      return "🃁";
+    if (this.value === CardValue.Two && this.suit === CardSuit.Diamond)
+      return "🃂";
+    if (this.value === CardValue.Three && this.suit === CardSuit.Diamond)
+      return "🃃";
+    if (this.value === CardValue.Four && this.suit === CardSuit.Diamond)
+      return "🃄";
+    if (this.value === CardValue.Five && this.suit === CardSuit.Diamond)
+      return "🃅";
+    if (this.value === CardValue.Six && this.suit === CardSuit.Diamond)
+      return "🃆";
+    if (this.value === CardValue.Seven && this.suit === CardSuit.Diamond)
+      return "🃇";
+    if (this.value === CardValue.Eight && this.suit === CardSuit.Diamond)
+      return "🃈";
+    if (this.value === CardValue.Nine && this.suit === CardSuit.Diamond)
+      return "🃉";
+    if (this.value === CardValue.Ten && this.suit === CardSuit.Diamond)
+      return "🃊";
+    if (this.value === CardValue.Jack && this.suit === CardSuit.Diamond)
+      return "🃋";
+    if (this.value === CardValue.Queen && this.suit === CardSuit.Diamond)
+      return "🃍";
+    if (this.value === CardValue.King && this.suit === CardSuit.Diamond)
+      return "🃎";
 
-    if (value === CardValue.Ace && suit === CardSuit.Club) return "🃑";
-    if (value === CardValue.Two && suit === CardSuit.Club) return "🃒";
-    if (value === CardValue.Three && suit === CardSuit.Club) return "🃓";
-    if (value === CardValue.Four && suit === CardSuit.Club) return "🃔";
-    if (value === CardValue.Five && suit === CardSuit.Club) return "🃕";
-    if (value === CardValue.Six && suit === CardSuit.Club) return "🃖";
-    if (value === CardValue.Seven && suit === CardSuit.Club) return "🃗";
-    if (value === CardValue.Eight && suit === CardSuit.Club) return "🃘";
-    if (value === CardValue.Nine && suit === CardSuit.Club) return "🃙";
-    if (value === CardValue.Ten && suit === CardSuit.Club) return "🃚";
-    if (value === CardValue.Jack && suit === CardSuit.Club) return "🃛";
-    if (value === CardValue.Queen && suit === CardSuit.Club) return "🃝";
-    if (value === CardValue.King && suit === CardSuit.Club) return "🃞";
+    if (this.value === CardValue.Ace && this.suit === CardSuit.Club) return "🃑";
+    if (this.value === CardValue.Two && this.suit === CardSuit.Club) return "🃒";
+    if (this.value === CardValue.Three && this.suit === CardSuit.Club)
+      return "🃓";
+    if (this.value === CardValue.Four && this.suit === CardSuit.Club)
+      return "🃔";
+    if (this.value === CardValue.Five && this.suit === CardSuit.Club)
+      return "🃕";
+    if (this.value === CardValue.Six && this.suit === CardSuit.Club) return "🃖";
+    if (this.value === CardValue.Seven && this.suit === CardSuit.Club)
+      return "🃗";
+    if (this.value === CardValue.Eight && this.suit === CardSuit.Club)
+      return "🃘";
+    if (this.value === CardValue.Nine && this.suit === CardSuit.Club)
+      return "🃙";
+    if (this.value === CardValue.Ten && this.suit === CardSuit.Club) return "🃚";
+    if (this.value === CardValue.Jack && this.suit === CardSuit.Club)
+      return "🃛";
+    if (this.value === CardValue.Queen && this.suit === CardSuit.Club)
+      return "🃝";
+    if (this.value === CardValue.King && this.suit === CardSuit.Club)
+      return "🃞";
 
-    if (value === CardValue.Joker && suit === CardSuit.Joker) return "🃟";
+    if (this.value === CardValue.Joker && this.suit === CardSuit.Joker)
+      return "🃟";
 
     return "🂠";
   }
 
-  private static toColor(suit: CardSuit) {
-    switch (suit) {
+  private toColor() {
+    switch (this.suit) {
       case CardSuit.Spade:
-        return Color.BLUE;
+        return Color.Blue;
       case CardSuit.Heart:
-        return Color.RED;
+        return Color.Red;
       case CardSuit.Diamond:
-        return Color.YELLOW;
+        return Color.Yellow;
       case CardSuit.Club:
-        return Color.GREEN;
+        return Color.Green;
       default:
-        return Color.WHITE;
+        return Color.White;
     }
   }
 

@@ -1,12 +1,12 @@
-class Color {
-  public static readonly WHITE = 0xffffff;
-  public static readonly BLACK = 0x000000;
-  public static readonly BLUE = 0x3581d8;
-  public static readonly GREY = 0xbdc7c9;
-  public static readonly DARK_GREY = 0x424642;
-  public static readonly GREEN = 0x28cc2d;
-  public static readonly RED = 0xd82e3f;
-  public static readonly YELLOW = 0xffe135;
+enum Color {
+  White = 0xffffff,
+  Black = 0x000000,
+  Blue = 0x3581d8,
+  Grey = 0xbdc7c9,
+  DarkGrey = 0x424642,
+  Green = 0x28cc2d,
+  Red = 0xd82e3f,
+  Yellow = 0xffe135,
 }
 
 export default Color;
