@@ -121,17 +121,19 @@ class TycoonViewController extends ViewController {
       Layout.spacing(2);
   }
 
-  protected addEventListeners() {
+  public addEventListeners() {
+    super.addEventListeners();
+
     this.on("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
-    socket.on("init-success", this.handleSocketInitSuccess.bind(this));
-    socket.on("update", this.handleSocketUpdate.bind(this));
-    socket.on("lose", this.handleSocketLose.bind(this));
-    socket.on("host-left", this.handleHostLeft.bind(this));
-    socket.on("guest-left", this.handleGuestLeft.bind(this));
+    socket.on("tycoon-init-success", this.handleSocketInitSuccess);
+    socket.on("tycoon-update", this.handleSocketUpdate);
+    socket.on("tycoon-lose", this.handleSocketLose);
+    socket.on("tycoon-host-leave", this.handleHostLeft);
+    socket.on("tycoon-guest-leave", this.handleGuestLeft);
 
-    socket.emit("init");
+    socket.emit("tycoon-init");
   }
 
   private createHostLeftRoomAlert() {
@@ -144,27 +146,27 @@ class TycoonViewController extends ViewController {
     this.loadViewController(new LobbyViewController());
   };
 
-  private handleHostLeft() {
+  private handleHostLeft = () => {
     this.addView(this.hostLeftRoomAlert);
-  }
+  };
 
-  private handleGuestLeft(roomId: string) {
+  private handleGuestLeft = (roomId: string) => {
     this.guestLeftRoomAlert.onOk(() => {
       this.loadViewController(new HostRoomViewController(roomId));
     });
     this.addView(this.guestLeftRoomAlert);
-  }
+  };
 
-  private handleSocketInitSuccess(data: SocketInitSuccessData) {
-    const { cardJsons, myTurn, numTheirCards } = data;
+  private handleSocketInitSuccess = (data: SocketInitSuccessData) => {
+    const { cardJsons, myTurn } = data;
     this.tycoon.init(myTurn);
     this.myCards = this.createMyCardsFromCardJsons(cardJsons);
-    this.numTheirCards = numTheirCards;
+    this.numTheirCards = cardJsons.length;
     this.sortMyCards();
     this.drawMyCards();
     this.addView(this.actionButton);
     this.update();
-  }
+  };
 
   private update() {
     this.layoutMyCards();
@@ -198,15 +200,16 @@ class TycoonViewController extends ViewController {
     });
   }
 
-  protected removeEventListeners() {
+  public removeEventListeners() {
+    super.removeEventListeners();
     this.off("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
-    socket.off("init-success");
-    socket.off("update");
-    socket.off("lose");
-    socket.off("host-left");
-    socket.off("guest-left");
+    socket.off("tycoon-init-success", this.handleSocketInitSuccess);
+    socket.off("tycoon-update", this.handleSocketUpdate);
+    socket.off("tycoon-lose", this.handleSocketLose);
+    socket.off("tycoon-host-leave", this.handleHostLeft);
+    socket.off("tycoon-guest-leave", this.handleGuestLeft);
   }
 
   private handleActionButtonPointerDown = () => {
@@ -215,7 +218,7 @@ class TycoonViewController extends ViewController {
 
     const socket = Application.shared.socket;
     const selectedCardJsons = selectedCards.map((card) => card.toJson());
-    socket.emit("action", selectedCardJsons);
+    socket.emit("tycoon-action", selectedCardJsons);
 
     this.myCards = this.getUnselectedCards();
 
@@ -242,7 +245,7 @@ class TycoonViewController extends ViewController {
 
     if (this.myCards.length === 0) {
       const socket = Application.shared.socket;
-      socket.emit("win");
+      socket.emit("tycoon-win");
       this.addView(this.gameOverAlert);
     }
 
@@ -280,11 +283,11 @@ class TycoonViewController extends ViewController {
     }
   }
 
-  private handleSocketLose() {
+  private handleSocketLose = () => {
     this.addView(this.gameOverAlert);
-  }
+  };
 
-  private handleSocketUpdate(lastCardJsons: CardJson[]) {
+  private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
     const theirSelectedCards = lastCardJsons.map((json) => {
       const card = Card.fromJson(json);
       card.setCenterAsOrigin();
@@ -315,7 +318,7 @@ class TycoonViewController extends ViewController {
     }
 
     this.update();
-  }
+  };
 
   private showTheirSpeechWithAnimation(onComplete: () => void) {
     this.addView(this.theirPassSpeech);

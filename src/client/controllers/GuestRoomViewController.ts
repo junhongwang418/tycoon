@@ -28,16 +28,16 @@ class GuestRoomViewController extends RoomViewController {
     this.addView(this.promptText);
   }
 
-  protected addEventListeners() {
+  public addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
-    socket.on("host-left", this.handleSocketHostLeave.bind(this));
+    socket.on("room-host-leave", this.handleSocketHostLeave);
   }
 
-  protected removeEventListeners() {
+  public removeEventListeners() {
     super.removeEventListeners();
     const socket = Application.shared.socket;
-    socket.off("host-left");
+    socket.off("room-host-leave", this.handleSocketHostLeave);
   }
 
   protected update() {
@@ -45,9 +45,9 @@ class GuestRoomViewController extends RoomViewController {
     this.updateTycoonOptionsView();
   }
 
-  private handleSocketHostLeave() {
+  private handleSocketHostLeave = () => {
     this.addView(this.hostLeftRoomAlert);
-  }
+  };
 
   private layoutPromptText() {
     this.promptText.setCenterAsOrigin();

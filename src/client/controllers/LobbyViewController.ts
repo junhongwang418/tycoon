@@ -35,18 +35,18 @@ class LobbyViewController extends ViewController {
     this.addView(this.joinRoomButton);
   }
 
-  protected addEventListeners() {
+  public addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
-    socket.on("create-room-success", this.handleSocketCreateRoomSuccess);
-    socket.on("join-room-success", this.handleSocketJoinRoomSuccess);
+    socket.on("lobby-create-room-success", this.handleSocketCreateRoomSuccess);
+    socket.on("lobby-join-room-success", this.handleSocketJoinRoomSuccess);
   }
 
-  protected removeEventListeners() {
+  public removeEventListeners() {
     super.removeEventListeners();
     const socket = Application.shared.socket;
-    socket.off("create-room-success", this.handleSocketCreateRoomSuccess);
-    socket.off("join-room-success", this.handleSocketJoinRoomSuccess);
+    socket.off("lobby-create-room-success", this.handleSocketCreateRoomSuccess);
+    socket.off("lobby-join-room-success", this.handleSocketJoinRoomSuccess);
   }
 
   private layoutCreateRoomButton() {
@@ -75,7 +75,7 @@ class LobbyViewController extends ViewController {
 
   private handleJoin = (roomId: string) => {
     const socket = Application.shared.socket;
-    socket.emit("join-room", roomId);
+    socket.emit("lobby-join-room", roomId);
   };
 
   private createCreateRoomButton() {
@@ -92,7 +92,7 @@ class LobbyViewController extends ViewController {
 
   private handleCreateRoomButtonPointerDown = () => {
     const socket = Application.shared.socket;
-    socket.emit("create-room");
+    socket.emit("lobby-create-room");
   };
 
   private handleJoinRoomButtonPointerDown = () => {

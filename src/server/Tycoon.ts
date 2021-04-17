@@ -1,77 +1,101 @@
 import CardDeck from "./CardDeck";
 import { Socket } from "socket.io";
-import Card from "./Card";
 import { SocketInitSuccessData } from "../common/Tycoon";
+import { CardJson } from "../common/Card";
+
+interface SocketCallbackBundle {
+  onTycoonInitHandler: () => void;
+  onTycoonActionHandler: (selectedCardJsons: CardJson[]) => void;
+  onTycoonWinHandler: () => void;
+}
 
 class Tycoon {
-  private player1Socket: Socket;
-  private player2Socket: Socket;
+  private sockets: Socket[];
+  private cardDeck: CardDeck;
+  private socketCallbackBundles: { [id: string]: SocketCallbackBundle };
 
-  private player1Cards: Card[];
-  private player2Cards: Card[];
+  constructor(sockets: Socket[]) {
+    this.sockets = sockets;
+    this.cardDeck = this.createCardDeck();
+    this.socketCallbackBundles = {};
+  }
 
-  constructor(player1Socket: Socket, player2Socket: Socket) {
-    this.player1Socket = player1Socket;
-    this.player2Socket = player2Socket;
-
-    const cardDeck = new CardDeck();
-    cardDeck.shuffle();
-    this.player1Cards = cardDeck.drawMany(16);
-    this.player2Cards = cardDeck.drawMany(16);
-
+  public start() {
     this.addEventListeners();
   }
 
-  public addEventListeners() {
-    this.player1Socket.on("init", () => {
-      const data: SocketInitSuccessData = {
-        cardJsons: this.player1Cards.map((card) => card.toJson()),
-        myTurn: 0,
-        numTheirCards: 16,
+  public quit() {
+    this.removeEventListeners();
+  }
+
+  private createCardDeck() {
+    const cardDeck = new CardDeck();
+    cardDeck.shuffle();
+    return cardDeck;
+  }
+
+  private addEventListeners() {
+    this.sockets.forEach((socket) => {
+      const onTycoonInitHandler = () => this.handleSocketTycoonInit(socket);
+      const onTycoonActionHandler = (selectedCardJsons: CardJson[]) =>
+        this.handleSocketTycoonAction(socket, selectedCardJsons);
+      const onTycoonWinHandler = () => this.handleSocketTycoonWin(socket);
+
+      socket.on("tycoon-init", onTycoonInitHandler);
+      socket.on("tycoon-action", onTycoonActionHandler);
+      socket.on("tycoon-win", onTycoonWinHandler);
+      socket.on("disconnect", this.handleSocketDisconnect);
+
+      this.socketCallbackBundles[socket.id] = {
+        onTycoonInitHandler,
+        onTycoonActionHandler,
+        onTycoonWinHandler,
       };
-      this.player1Socket.emit("init-success", data);
-    });
-
-    this.player2Socket.on("init", () => {
-      const data: SocketInitSuccessData = {
-        cardJsons: this.player2Cards.map((card) => card.toJson()),
-        myTurn: 1,
-        numTheirCards: 16,
-      };
-      this.player2Socket.emit("init-success", data);
-    });
-
-    this.player1Socket.on("action", (selectedCardJsons) => {
-      this.player2Socket.emit("update", selectedCardJsons);
-    });
-
-    this.player2Socket.on("action", (selectedCardJsons) => {
-      this.player1Socket.emit("update", selectedCardJsons);
-    });
-
-    this.player1Socket.on("win", () => {
-      this.player2Socket.emit("lose");
-      this.removeEventListeners();
-    });
-
-    this.player2Socket.on("win", () => {
-      this.player1Socket.emit("lose");
-      this.removeEventListeners();
     });
   }
 
-  public removeEventListeners() {
-    this.player1Socket.removeAllListeners("init");
-    this.player2Socket.removeAllListeners("init");
+  private handleSocketTycoonInit = (socket: Socket) => {
+    const cards = this.cardDeck.drawMany(16);
+    const data: SocketInitSuccessData = {
+      cardJsons: cards.map((card) => card.toJson()),
+      myTurn: this.sockets.findIndex((s) => s.id === socket.id),
+    };
+    socket.emit("tycoon-init-success", data);
+  };
 
-    this.player1Socket.removeAllListeners("action");
-    this.player2Socket.removeAllListeners("action");
+  private handleSocketTycoonAction = (
+    socket: Socket,
+    selectedCardJsons: CardJson[]
+  ) => {
+    const otherSockets = this.sockets.filter((s) => s.id !== socket.id);
+    otherSockets.forEach((s) => s.emit("tycoon-update", selectedCardJsons));
+  };
 
-    this.player1Socket.removeAllListeners("win");
-    this.player2Socket.removeAllListeners("win");
+  private handleSocketTycoonWin = (socket: Socket) => {
+    const otherSockets = this.sockets.filter((s) => s.id !== socket.id);
+    otherSockets.forEach((s) => s.emit("tycoon-lose"));
+    this.quit();
+  };
 
-    this.player1Socket.removeAllListeners("lose");
-    this.player2Socket.removeAllListeners("lose");
+  private handleSocketDisconnect = () => {
+    this.quit();
+  };
+
+  private removeEventListeners() {
+    this.sockets.forEach((socket) => {
+      const {
+        onTycoonInitHandler,
+        onTycoonActionHandler,
+        onTycoonWinHandler,
+      } = this.socketCallbackBundles[socket.id];
+
+      socket.off("tycoon-init", onTycoonInitHandler);
+      socket.off("tycoon-action", onTycoonActionHandler);
+      socket.off("tycoon-win", onTycoonWinHandler);
+      socket.off("disconnect", this.handleSocketDisconnect);
+
+      delete this.socketCallbackBundles[socket.id];
+    });
   }
 }
 

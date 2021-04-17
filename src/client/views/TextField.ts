@@ -59,7 +59,6 @@ class TextField extends View {
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
-    console.log(e);
     if (!e.repeat) {
       if (e.key.length === 1) {
         this.value += e.key;

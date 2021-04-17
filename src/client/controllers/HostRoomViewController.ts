@@ -47,7 +47,7 @@ class HostRoomViewController extends RoomViewController {
     this.tycoonOptions[optionKey] = checked;
     this.updateTycoonOptionsView();
     const socket = Application.shared.socket;
-    socket.emit("options-update", this.tycoonOptions);
+    socket.emit("room-tycoon-options-update", this.tycoonOptions);
   };
 
   private updateStartButton() {
@@ -77,7 +77,7 @@ class HostRoomViewController extends RoomViewController {
 
   private handleStartButtonPointerDown = () => {
     const socket = Application.shared.socket;
-    socket.emit("start");
+    socket.emit("room-start");
   };
 
   private layoutSettingsButton() {

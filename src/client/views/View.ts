@@ -1,8 +1,7 @@
 import * as PIXI from "pixi.js";
 
 class View extends PIXI.Container {
-  private initialized: boolean;
-
+  protected initialized: boolean;
   protected isCenterOrigin: boolean;
 
   constructor() {
@@ -12,10 +11,11 @@ class View extends PIXI.Container {
   }
 
   public init() {
-    this.initialized = true;
+    if (this.initialized) return;
     this.layout();
     this.draw();
     if (this.isCenterOrigin) this.setCenterAsOriginBasedOnCurrentSize();
+    this.initialized = true;
   }
 
   public setCenterAsOrigin() {
@@ -33,16 +33,30 @@ class View extends PIXI.Container {
 
   public addEventListeners() {}
 
-  public removeEventListeners() {
+  protected addEventListenersRecursively() {
+    this.addEventListeners();
+    this.children.forEach((child) => {
+      if (child instanceof View) child.addEventListeners();
+    });
+  }
+
+  public removeEventListeners() {}
+
+  protected removeEventListenersRecursively() {
+    this.removeEventListeners();
     this.children.forEach((child) => {
       if (child instanceof View) child.removeEventListeners();
     });
   }
 
   public addView(view: View) {
-    if (!view.isInitialized()) view.init();
+    if (view.initialized) {
+      view.addEventListenersRecursively();
+    } else {
+      view.init();
+      view.addEventListeners();
+    }
     this.addChild(view);
-    view.addEventListeners();
   }
 
   public addViews(...views: View[]) {
@@ -50,7 +64,7 @@ class View extends PIXI.Container {
   }
 
   public removeView(view: View) {
-    view.removeEventListeners();
+    view.removeEventListenersRecursively();
     this.removeChild(view);
   }
 

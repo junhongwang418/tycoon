@@ -52,18 +52,18 @@ class RoomViewController extends ViewController {
     this.addView(this.tycoonOptionsView);
   }
 
-  protected addEventListeners() {
+  public addEventListeners() {
     super.addEventListeners();
     const socket = Application.shared.socket;
     socket.on("room-status-update", this.handleSocketRoomStatusUpdate);
-    socket.on("start-success", this.handleSocketStartSuccess);
+    socket.on("room-start-success", this.handleSocketStartSuccess);
   }
 
-  protected removeEventListeners() {
+  public removeEventListeners() {
     super.removeEventListeners();
     const socket = Application.shared.socket;
     socket.off("room-status-update", this.handleSocketRoomStatusUpdate);
-    socket.off("start-success", this.handleSocketStartSuccess);
+    socket.off("room-start-success", this.handleSocketStartSuccess);
   }
 
   protected update() {
@@ -129,7 +129,7 @@ class RoomViewController extends ViewController {
   private handleLeaveButtonPointerDown = () => {
     this.loadViewController(new LobbyViewController());
     const socket = Application.shared.socket;
-    socket.emit("leave-room");
+    socket.emit("room-leave");
   };
 
   private handleSocketStartSuccess = (tycoonOptions: TycoonOptions) => {

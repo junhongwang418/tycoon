@@ -55,6 +55,7 @@ class Application {
     document.body.appendChild(this.app.view);
     const vc = new LoadingViewController();
     vc.init();
+    vc.addEventListeners();
     this.addViewController(vc);
   }
 }

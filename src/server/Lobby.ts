@@ -2,46 +2,73 @@ import Room from "./Room";
 import { Socket } from "socket.io";
 import Algorithm from "../common/Algorithm";
 
+interface SocketCallbackBundle {
+  onLobbyCreateRoomHandler: () => void;
+  onLobbyJoinRoomHandler: (roomId: string) => void;
+  onDisconnectHandler: () => void;
+}
+
 class Lobby {
   private rooms: { [id: string]: Room };
-  private sockets: { [id: string]: Socket };
+  private socketCallbackBundles: { [id: string]: SocketCallbackBundle };
 
   public static readonly shared = new Lobby();
 
   private constructor() {
     this.rooms = {};
-    this.sockets = {};
+    this.socketCallbackBundles = {};
   }
 
   public addSocket(socket: Socket) {
-    this.sockets[socket.id] = socket;
+    const onLobbyCreateRoomHandler = () =>
+      this.handleSocketLobbyCreateRoom(socket);
+    const onLobbyJoinRoomHandler = (roomId: string) =>
+      this.handleSocketLobbyJoinRoom(socket, roomId);
+    const onDisconnectHandler = () => this.handleSocketDisconnect(socket);
 
-    socket.on("create-room", () => {
-      const roomId = this.generateUniqueRoomId();
-      const room = new Room(roomId);
-      this.rooms[roomId] = room;
-      socket.emit("create-room-success", roomId);
-      this.removeSocket(socket);
-      room.addSocket(socket);
-    });
+    socket.on("lobby-create-room", onLobbyCreateRoomHandler);
+    socket.on("lobby-join-room", onLobbyJoinRoomHandler);
+    socket.on("disconnect", onDisconnectHandler);
 
-    socket.on("join-room", (roomId: string) => {
-      const room = this.rooms[roomId];
-      if (room && !room.isFull()) {
-        socket.emit("join-room-success", roomId);
-        this.removeSocket(socket);
-        room.addSocket(socket);
-      }
-    });
-
-    socket.on("disconnect", () => {
-      this.removeSocket(socket);
-    });
+    this.socketCallbackBundles[socket.id] = {
+      onLobbyCreateRoomHandler,
+      onLobbyJoinRoomHandler,
+      onDisconnectHandler,
+    };
   }
 
+  private handleSocketDisconnect = (socket: Socket) => {
+    this.removeSocket(socket);
+  };
+
+  private handleSocketLobbyJoinRoom = (socket: Socket, roomId: string) => {
+    const room = this.rooms[roomId];
+    if (room && !room.isFull()) {
+      socket.emit("lobby-join-room-success", roomId);
+      this.removeSocket(socket);
+      room.addSocket(socket);
+    }
+  };
+
+  private handleSocketLobbyCreateRoom = (socket: Socket) => {
+    const roomId = this.generateUniqueRoomId();
+    const room = new Room(roomId);
+    this.rooms[roomId] = room;
+    socket.emit("lobby-create-room-success", roomId);
+    this.removeSocket(socket);
+    room.addSocket(socket);
+  };
+
   private removeSocket(socket: Socket) {
-    socket.removeAllListeners("create-room");
-    delete this.sockets[socket.id];
+    const {
+      onLobbyCreateRoomHandler,
+      onLobbyJoinRoomHandler,
+      onDisconnectHandler,
+    } = this.socketCallbackBundles[socket.id];
+    socket.off("lobby-create-room", onLobbyCreateRoomHandler);
+    socket.off("lobby-join-room", onLobbyJoinRoomHandler);
+    socket.off("disconnect", onDisconnectHandler);
+    delete this.socketCallbackBundles[socket.id];
   }
 
   public removeRoom(roomId: string) {
