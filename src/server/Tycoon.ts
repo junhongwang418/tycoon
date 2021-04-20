@@ -6,10 +6,11 @@ import { CardJson } from "../common/Card";
 interface SocketCallbackBundle {
   onTycoonInitHandler: () => void;
   onTycoonActionHandler: (selectedCardJsons: CardJson[]) => void;
-  onTycoonWinHandler: () => void;
 }
 
 class Tycoon {
+  private static readonly NUM_CARDS_PER_PLAYER = 16;
+
   private sockets: Socket[];
   private cardDeck: CardDeck;
   private socketCallbackBundles: { [id: string]: SocketCallbackBundle };
@@ -39,23 +40,21 @@ class Tycoon {
       const onTycoonInitHandler = () => this.handleSocketTycoonInit(socket);
       const onTycoonActionHandler = (selectedCardJsons: CardJson[]) =>
         this.handleSocketTycoonAction(socket, selectedCardJsons);
-      const onTycoonWinHandler = () => this.handleSocketTycoonWin(socket);
 
       socket.on("tycoon-init", onTycoonInitHandler);
       socket.on("tycoon-action", onTycoonActionHandler);
-      socket.on("tycoon-win", onTycoonWinHandler);
+      socket.on("tycoon-quit", this.handleSocketTycoonQuit);
       socket.on("disconnect", this.handleSocketDisconnect);
 
       this.socketCallbackBundles[socket.id] = {
         onTycoonInitHandler,
         onTycoonActionHandler,
-        onTycoonWinHandler,
       };
     });
   }
 
   private handleSocketTycoonInit = (socket: Socket) => {
-    const cards = this.cardDeck.drawMany(16);
+    const cards = this.cardDeck.drawMany(Tycoon.NUM_CARDS_PER_PLAYER);
     const data: SocketInitSuccessData = {
       cardJsons: cards.map((card) => card.toJson()),
       myTurn: this.sockets.findIndex((s) => s.id === socket.id),
@@ -71,13 +70,11 @@ class Tycoon {
     otherSockets.forEach((s) => s.emit("tycoon-update", selectedCardJsons));
   };
 
-  private handleSocketTycoonWin = (socket: Socket) => {
-    const otherSockets = this.sockets.filter((s) => s.id !== socket.id);
-    otherSockets.forEach((s) => s.emit("tycoon-lose"));
+  private handleSocketDisconnect = () => {
     this.quit();
   };
 
-  private handleSocketDisconnect = () => {
+  private handleSocketTycoonQuit = () => {
     this.quit();
   };
 
@@ -86,12 +83,11 @@ class Tycoon {
       const {
         onTycoonInitHandler,
         onTycoonActionHandler,
-        onTycoonWinHandler,
       } = this.socketCallbackBundles[socket.id];
 
       socket.off("tycoon-init", onTycoonInitHandler);
       socket.off("tycoon-action", onTycoonActionHandler);
-      socket.off("tycoon-win", onTycoonWinHandler);
+      socket.off("tycoon-quit", this.handleSocketTycoonQuit);
       socket.off("disconnect", this.handleSocketDisconnect);
 
       delete this.socketCallbackBundles[socket.id];

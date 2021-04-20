@@ -25,14 +25,12 @@ class ViewController extends View {
     Application.shared.removeAllViewControllers();
     Application.shared.addViewController(vc);
     vc.init();
-    vc.addEventListeners();
   }
 
   protected pushViewController(vc: ViewController) {
     this.removeEventListenersRecursively();
     Application.shared.addViewController(vc);
     vc.init();
-    vc.addEventListeners();
   }
 
   protected popViewController() {

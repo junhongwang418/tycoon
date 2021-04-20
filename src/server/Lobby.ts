@@ -78,7 +78,7 @@ class Lobby {
   private generateUniqueRoomId() {
     let roomId;
     do {
-      roomId = Algorithm.randomString(Room.ID_LENGTH);
+      roomId = Algorithm.randomDigitString(Room.ID_LENGTH);
     } while (this.rooms[roomId] != null);
     return roomId;
   }

@@ -2,7 +2,7 @@ import PIXISound from "pixi-sound";
 
 class Sound {
   public static getFilePaths() {
-    return ["click1.ogg", "cardSlide1.ogg", "cardPlace1.ogg"];
+    return ["click1.ogg"];
   }
 
   public static play(filePath: string) {

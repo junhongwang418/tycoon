@@ -89,3 +89,57 @@ export class CardValueUtil {
     }
   }
 }
+
+export class CardUtil {
+  public static getMostSignificantCard(cards: Card[]) {
+    const nonJokerCards = cards.filter((card) => !card.isJoker());
+    return nonJokerCards.length > 0 ? nonJokerCards[0] : cards[0];
+  }
+}
+
+class Card {
+  public readonly value: CardValue;
+  public readonly suit: CardSuit;
+
+  constructor(value: CardValue, suit: CardSuit) {
+    this.value = value;
+    this.suit = suit;
+  }
+
+  public toJson(): CardJson {
+    return {
+      value: this.value,
+      suit: this.suit,
+    };
+  }
+
+  public greaterThan(other: Card): boolean {
+    return CardValueUtil.greaterThan(this.value, other.value);
+  }
+
+  public lessThan(other: Card): boolean {
+    return CardValueUtil.lessThan(this.value, other.value);
+  }
+
+  public equals(other: Card): boolean {
+    return this.value === other.value && this.suit === other.suit;
+  }
+
+  public static fromJson(json: CardJson) {
+    return new Card(json.value, json.suit);
+  }
+
+  public isThreeOfSpades() {
+    return this.is(CardValue.Three, CardSuit.Spade);
+  }
+
+  public isJoker() {
+    return this.is(CardValue.Joker, CardSuit.Joker);
+  }
+
+  private is(value: CardValue, suit: CardSuit) {
+    return this.value === value && this.suit === suit;
+  }
+}
+
+export default Card;

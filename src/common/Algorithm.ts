@@ -26,6 +26,18 @@ class Algorithm {
     }
     return res;
   }
+
+  public static randomDigit() {
+    return Math.floor(Math.random() * 10);
+  }
+
+  public static randomDigitString(length: number) {
+    let res = "";
+    for (let i = 0; i < length; i++) {
+      res += Algorithm.randomDigit();
+    }
+    return res;
+  }
 }
 
 export default Algorithm;

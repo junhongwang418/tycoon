@@ -10,12 +10,14 @@ class View extends PIXI.Container {
     this.isCenterOrigin = false;
   }
 
-  public init() {
+  protected init() {
     if (this.initialized) return;
     this.layout();
     this.draw();
     if (this.isCenterOrigin) this.setCenterAsOriginBasedOnCurrentSize();
+    this.addEventListeners();
     this.initialized = true;
+    this.onInit();
   }
 
   public setCenterAsOrigin() {
@@ -23,38 +25,11 @@ class View extends PIXI.Container {
     this.setCenterAsOriginBasedOnCurrentSize();
   }
 
-  public isInitialized() {
-    return this.initialized;
-  }
-
-  protected layout() {}
-
-  protected draw() {}
-
-  public addEventListeners() {}
-
-  protected addEventListenersRecursively() {
-    this.addEventListeners();
-    this.children.forEach((child) => {
-      if (child instanceof View) child.addEventListeners();
-    });
-  }
-
-  public removeEventListeners() {}
-
-  protected removeEventListenersRecursively() {
-    this.removeEventListeners();
-    this.children.forEach((child) => {
-      if (child instanceof View) child.removeEventListeners();
-    });
-  }
-
   public addView(view: View) {
     if (view.initialized) {
       view.addEventListenersRecursively();
     } else {
       view.init();
-      view.addEventListeners();
     }
     this.addChild(view);
   }
@@ -70,6 +45,38 @@ class View extends PIXI.Container {
 
   public removeViews(...views: View[]) {
     views.forEach((view) => this.removeView(view));
+  }
+
+  public bringToFront() {
+    const parent = this.parent;
+    if (parent instanceof View) {
+      parent.removeView(this);
+      parent.addView(this);
+    }
+  }
+
+  protected layout() {}
+
+  protected draw() {}
+
+  protected addEventListeners() {}
+
+  protected removeEventListeners() {}
+
+  protected onInit() {}
+
+  protected addEventListenersRecursively() {
+    this.addEventListeners();
+    this.children.forEach((child) => {
+      if (child instanceof View) child.addEventListeners();
+    });
+  }
+
+  protected removeEventListenersRecursively() {
+    this.removeEventListeners();
+    this.children.forEach((child) => {
+      if (child instanceof View) child.removeEventListeners();
+    });
   }
 
   protected setCenterAsOriginBasedOnCurrentSize() {

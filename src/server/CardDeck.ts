@@ -1,5 +1,4 @@
-import { CardSuit, CardValue } from "../common/Card";
-import Card from "./Card";
+import Card, { CardSuit, CardValue } from "../common/Card";
 import Algorithm from "../common/Algorithm";
 
 class CardDeck {

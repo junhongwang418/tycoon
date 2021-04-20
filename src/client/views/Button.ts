@@ -75,6 +75,7 @@ class Button extends View {
   }
 
   private handlePointerDown = () => {
+    this.setAlpha(1);
     this.pointerDownCallback();
     Sound.play("click1.ogg");
   };
@@ -127,9 +128,9 @@ class Button extends View {
   public updateText(text: string) {
     this.title = text;
     this.text.updateText(text);
-    this.removeViews(this.border, this.background, this.text);
+    this.removeViews(this.background, this.border, this.text);
     this.defineHitArea();
-    this.addChild(this.border, this.background, this.text);
+    this.addChild(this.background, this.border, this.text);
     if (this.isCenterOrigin) this.setCenterAsOriginBasedOnCurrentSize();
   }
 }

@@ -1,3 +1,4 @@
+import CardView from "../client/views/CardView";
 import { CardJson, CardSuit } from "./Card";
 
 export enum TycoonOptionKey {

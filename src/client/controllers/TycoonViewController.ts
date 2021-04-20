@@ -1,11 +1,9 @@
 import * as PIXI from "pixi.js";
 import Button from "../views/Button";
-import Card from "../views/Card";
-import Text from "../views/Text";
+import CardView from "../views/CardView";
 import Application from "../Application";
 import ViewController from "./ViewController";
-import Sound from "../Sound";
-import { CardJson, CardValueUtil } from "../../common/Card";
+import { CardJson } from "../../common/Card";
 import { TycoonOptions, SocketInitSuccessData } from "../../common/Tycoon";
 import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
@@ -15,43 +13,50 @@ import anime from "animejs";
 import Speech from "../views/Speech";
 import Layout from "../Layout";
 import PlayerInfoView from "../views/PlayerInfoView";
+import Animation from "../Animation";
+import e from "express";
 
 class TycoonViewController extends ViewController {
   private static readonly CARD_SELECTION_OFFSET_Y = 20;
 
   private tycoon: Tycoon;
-  private numTheirCards: number;
 
-  private myCards: Card[];
-  private playedCards: Card[][];
+  private myCardViews: CardView[];
+  private playedCardViews: CardView[][];
   private actionButton: Button;
   private hostLeftRoomAlert: Alert;
   private guestLeftRoomAlert: Alert;
-  private gameOverAlert: Alert;
+  private winAlert: Alert;
+  private loseAlert: Alert;
   private myInfoView: PlayerInfoView;
   private theirInfoView: PlayerInfoView;
-  private theirPassSpeech: Speech;
-  private trashText: Text;
+  private passSpeech: Speech;
 
   constructor(tycoonOptions: TycoonOptions) {
     super();
 
     this.tycoon = new Tycoon(tycoonOptions);
-    this.myCards = [];
-    this.playedCards = [];
+
+    this.myCardViews = [];
+    this.playedCardViews = [];
     this.actionButton = this.createActionButton();
     this.hostLeftRoomAlert = this.createHostLeftRoomAlert();
     this.guestLeftRoomAlert = new Alert("The guest left the game :(");
-    this.gameOverAlert = this.createGameOverAlert();
+    this.winAlert = this.createWinAlert();
+    this.loseAlert = this.createLoseAlert();
     this.myInfoView = new PlayerInfoView("You");
     this.theirInfoView = new PlayerInfoView("Them");
-    this.trashText = new Text("🗑", { fontSize: 64 });
-    this.theirPassSpeech = new Speech("Pass");
+    this.passSpeech = new Speech("Pass");
+
     this.enableInteraction();
   }
 
   private enableInteraction() {
     this.interactive = true;
+    this.defineHitArea();
+  }
+
+  private defineHitArea() {
     this.hitArea = new PIXI.Rectangle(
       0,
       0,
@@ -60,8 +65,14 @@ class TycoonViewController extends ViewController {
     );
   }
 
-  private createGameOverAlert() {
-    const alert = new Alert("Game Over");
+  private createWinAlert() {
+    const alert = new Alert("You won 🎉");
+    alert.onOk(() => this.popViewController());
+    return alert;
+  }
+
+  private createLoseAlert() {
+    const alert = new Alert("You lost 😵");
     alert.onOk(() => this.popViewController());
     return alert;
   }
@@ -78,26 +89,18 @@ class TycoonViewController extends ViewController {
     this.layoutActionButton();
     this.layoutMyView();
     this.layoutTheirView();
-    this.layoutTrashText();
-    this.layoutTheirSpeech();
+    this.layoutPassSpeech();
   }
 
-  private layoutTheirSpeech() {
-    this.theirPassSpeech.setCenterAsOrigin();
-    this.theirPassSpeech.x =
+  private layoutPassSpeech() {
+    this.passSpeech.setCenterAsOrigin();
+    this.passSpeech.x =
       this.theirInfoView.x +
       PlayerInfoView.WIDTH / 2 +
-      this.theirPassSpeech.getSize().width / 2 +
+      this.passSpeech.getSize().width / 2 +
       Layout.spacing(2);
-    this.theirPassSpeech.y =
-      this.theirPassSpeech.getSize().height / 2 + Layout.spacing(2);
-  }
-
-  private layoutTrashText() {
-    this.trashText.setCenterAsOrigin();
-    this.trashText.x =
-      this.trashText.getTextSize().width / 2 + Layout.spacing(2);
-    this.trashText.y = Application.HEIGHT / 2;
+    this.passSpeech.y =
+      this.passSpeech.getSize().height / 2 + Layout.spacing(2);
   }
 
   private layoutMyView() {
@@ -121,19 +124,32 @@ class TycoonViewController extends ViewController {
       Layout.spacing(2);
   }
 
+  protected onInit() {
+    super.onInit();
+    const socket = Application.shared.socket;
+    socket.emit("tycoon-init");
+  }
+
   public addEventListeners() {
     super.addEventListeners();
-
     this.on("pointerdown", this.handlePointerDown);
 
     const socket = Application.shared.socket;
     socket.on("tycoon-init-success", this.handleSocketInitSuccess);
     socket.on("tycoon-update", this.handleSocketUpdate);
-    socket.on("tycoon-lose", this.handleSocketLose);
-    socket.on("tycoon-host-leave", this.handleHostLeft);
-    socket.on("tycoon-guest-leave", this.handleGuestLeft);
+    socket.on("room-host-leave", this.handleHostLeft);
+    socket.on("room-guest-leave", this.handleGuestLeft);
+  }
 
-    socket.emit("tycoon-init");
+  public removeEventListeners() {
+    super.removeEventListeners();
+    this.off("pointerdown", this.handlePointerDown);
+
+    const socket = Application.shared.socket;
+    socket.off("tycoon-init-success", this.handleSocketInitSuccess);
+    socket.off("tycoon-update", this.handleSocketUpdate);
+    socket.off("room-host-leave", this.handleHostLeft);
+    socket.off("room-guest-leave", this.handleGuestLeft);
   }
 
   private createHostLeftRoomAlert() {
@@ -158,123 +174,236 @@ class TycoonViewController extends ViewController {
   };
 
   private handleSocketInitSuccess = (data: SocketInitSuccessData) => {
-    const { cardJsons, myTurn } = data;
-    this.tycoon.init(myTurn);
-    this.myCards = this.createMyCardsFromCardJsons(cardJsons);
-    this.numTheirCards = cardJsons.length;
-    this.sortMyCards();
-    this.drawMyCards();
+    this.tycoon.init(data);
+
+    this.myCardViews = this.createMyCards();
+
+    this.layoutMyCards();
+
+    this.addViews(...this.myCardViews);
+    this.addView(this.myInfoView);
+    this.addView(this.theirInfoView);
     this.addView(this.actionButton);
+
     this.update();
   };
 
+  private createMyCards() {
+    const cardViews = this.tycoon.getMyCards().map((card) => {
+      const cardView = new CardView(card);
+      cardView.setCenterAsOrigin();
+      cardView.enableSelection();
+      cardView.onSelect((selected: boolean) => {
+        cardView.y +=
+          TycoonViewController.CARD_SELECTION_OFFSET_Y * (selected ? -1 : 1);
+      });
+      return cardView;
+    });
+    cardViews.sort(CardView.comparator);
+    return cardViews;
+  }
+
   private update() {
-    this.layoutMyCards();
     this.updatePlayerInfoViews();
     this.updateActionButton();
     this.updateMyCardsInteraction();
-    this.myInfoView.updateNumCardsLeftText(this.myCards.length);
-    this.theirInfoView.updateNumCardsLeftText(this.numTheirCards);
+
+    if (this.myCardViews.length === 0) {
+      this.win();
+    } else if (this.tycoon.getNumTheirCards() === 0) {
+      this.lose();
+    }
   }
 
-  private createMyCardsFromCardJsons(jsons: CardJson[]) {
-    return jsons.map((json) => {
-      const card = Card.fromJson(json);
-      card.setCenterAsOrigin();
-      card.onSelect((selected: boolean) => {
-        card.y +=
-          TycoonViewController.CARD_SELECTION_OFFSET_Y * (selected ? -1 : 1);
-        Sound.play("cardSlide1.ogg");
-      });
-      return card;
-    });
-  }
-
-  private sortMyCards() {
-    this.myCards.sort((a, b) => {
-      const aValue = a.getValue();
-      const bValue = b.getValue();
-      if (aValue === bValue) return 0;
-      if (CardValueUtil.greaterThan(aValue, bValue)) return 1;
-      return -1;
-    });
-  }
-
-  public removeEventListeners() {
-    super.removeEventListeners();
-    this.off("pointerdown", this.handlePointerDown);
+  private emitSelectedCards() {
+    const selectedCards = this.getSelectedCards();
+    const selectedCardModels = selectedCards.map((cv) => cv.model);
+    const selectedCardModelJsons = selectedCardModels.map((m) => m.toJson());
 
     const socket = Application.shared.socket;
-    socket.off("tycoon-init-success", this.handleSocketInitSuccess);
-    socket.off("tycoon-update", this.handleSocketUpdate);
-    socket.off("tycoon-lose", this.handleSocketLose);
-    socket.off("tycoon-host-leave", this.handleHostLeft);
-    socket.off("tycoon-guest-leave", this.handleGuestLeft);
+    socket.emit("tycoon-action", selectedCardModelJsons);
+  }
+
+  private win() {
+    this.addView(this.winAlert);
+    Application.shared.socket.emit("tycoon-quit");
+  }
+
+  private lose() {
+    this.addView(this.loseAlert);
+    Application.shared.socket.emit("tycoon-quit");
   }
 
   private handleActionButtonPointerDown = () => {
-    const selectedCards = this.getSelectedCards();
-    this.tycoon.play(selectedCards);
-
-    const socket = Application.shared.socket;
-    const selectedCardJsons = selectedCards.map((card) => card.toJson());
-    socket.emit("tycoon-action", selectedCardJsons);
-
-    this.myCards = this.getUnselectedCards();
-
-    const isPass = selectedCards.length === 0;
-    if (isPass) {
-      this.removePlayedCardsWithAnimation();
+    this.actionButton.disable();
+    if (this.getSelectedCards().length === 0) {
+      this.handleIPass();
     } else {
-      this.playedCards.push(selectedCards);
-      selectedCards.forEach((card) => {
-        this.removeView(card);
-        this.addView(card);
-        card.disableSelection();
-      });
-      this.layoutSelectedCardsWithAnimation(selectedCards);
-
-      if (this.tycoon.getPrevCards().length === 0) {
-        this.playedCards.forEach((cards) => this.removeViews(...cards));
-        this.removeViews(...selectedCards);
-        this.playedCards = [];
-      }
+      this.handleIPlay();
     }
-
-    Sound.play("cardPlace1.ogg");
-
-    if (this.myCards.length === 0) {
-      const socket = Application.shared.socket;
-      socket.emit("tycoon-win");
-      this.addView(this.gameOverAlert);
-    }
-
-    this.update();
   };
 
-  private removePlayedCardsWithAnimation() {
-    this.playedCards.forEach((cards) => {
-      cards.forEach((card) => {
-        anime({
-          targets: card,
-          x: this.trashText.x,
-          rotation: Math.random() * Math.PI * 2,
-          easing: "easeOutQuad",
-          complete: () => this.removeView(card),
+  private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
+    this.actionButton.disable();
+    if (lastCardJsons.length === 0) {
+      this.handleTheyPass();
+    } else {
+      this.handleTheyPlay(lastCardJsons);
+    }
+  };
+
+  private handleIPlay() {
+    this.emitSelectedCards();
+
+    const selectedCards = this.getSelectedCards();
+    selectedCards.forEach((cv) => cv.bringToFront());
+
+    this.tycoon.play(selectedCards.map((cv) => cv.model));
+    this.myCardViews = this.getUnselectedCards();
+
+    const animation = new Animation([
+      ...this.createThrowCardsToTheCenterAnimations(selectedCards),
+      ...this.createRepositionMyCardsAnimations(),
+    ]);
+    animation.onComplete(() => {
+      this.playedCardViews.push(selectedCards);
+
+      if (this.tycoon.getPrevCards().length === 0) {
+        // e.g. 8-stop
+        const nextAnimation = new Animation(
+          this.createMovingPlayedCardsToTheSideAnimations()
+        );
+        nextAnimation.onComplete(() => {
+          this.playedCardViews.forEach((cardViews) =>
+            this.removeViews(...cardViews)
+          );
+          this.playedCardViews = [];
+          this.update();
         });
-      });
+        nextAnimation.play();
+      } else {
+        this.update();
+      }
     });
-    this.playedCards = [];
+    animation.play();
   }
 
-  private layoutSelectedCardsWithAnimation(cards: Card[]) {
-    for (let i = 0; i < cards.length; i++) {
-      const card = cards[i];
+  private handleTheyPlay(cardJsons: CardJson[]) {
+    const cardViews = cardJsons.map((json) => {
+      const cardView = CardView.fromJson(json);
+      cardView.setCenterAsOrigin();
+      cardView.x = this.theirInfoView.x;
+      cardView.y = this.theirInfoView.y;
+      return cardView;
+    });
+    this.addViews(...cardViews);
+
+    this.tycoon.play(cardViews.map((cv) => cv.model));
+
+    const animation = new Animation(
+      this.createThrowCardsToTheCenterAnimations(cardViews)
+    );
+    animation.onComplete(() => {
+      this.playedCardViews.push(cardViews);
+
+      if (this.tycoon.getPrevCards().length === 0) {
+        // e.g. 8-stop
+        const nextAnimation = new Animation(
+          this.createMovingPlayedCardsToTheSideAnimations()
+        );
+        nextAnimation.onComplete(() => {
+          this.playedCardViews.forEach((cardViews) =>
+            this.removeViews(...cardViews)
+          );
+          this.playedCardViews = [];
+          this.update();
+        });
+        nextAnimation.play();
+      } else {
+        this.update();
+      }
+    });
+    animation.play();
+  }
+
+  private handleIPass() {
+    this.emitSelectedCards();
+
+    this.tycoon.play([]);
+
+    const animation = new Animation(
+      this.createMovingPlayedCardsToTheSideAnimations()
+    );
+    animation.onComplete(() => {
+      this.playedCardViews.forEach((cvs) => this.removeViews(...cvs));
+      this.playedCardViews = [];
+      this.update();
+    });
+    animation.play();
+  }
+
+  private handleTheyPass() {
+    this.tycoon.play([]);
+
+    this.addView(this.passSpeech);
+
+    const animation = new Animation([
+      ...this.createMovingPlayedCardsToTheSideAnimations(),
+      this.createPassSpeechScaleUpAnimation(),
+    ]);
+    animation.onComplete(() => {
+      this.removeView(this.passSpeech);
+      this.playedCardViews.forEach((cvs) => this.removeViews(...cvs));
+      this.playedCardViews = [];
+      this.update();
+    });
+    animation.play();
+  }
+
+  private moveCardViewsToTheSideWithAnimation(cardViews: CardView[]) {
+    cardViews.forEach((card) => {
+      anime({
+        targets: card,
+        x: 0,
+        rotation: Math.random() * Math.PI * 2,
+        easing: "easeOutQuad",
+      });
+    });
+  }
+
+  private createMovingCardViewsToTheSideAnimations(cardViews: CardView[]) {
+    const animations = [];
+    cardViews.forEach((card) => {
+      animations.push(
+        anime({
+          targets: card,
+          x: 0,
+          rotation: Math.random() * Math.PI * 2,
+          easing: "easeOutQuad",
+        })
+      );
+    });
+    return animations;
+  }
+
+  private createMovingPlayedCardsToTheSideAnimations() {
+    const animations = [];
+    this.playedCardViews.forEach((cardViews) =>
+      animations.push(
+        ...this.createMovingCardViewsToTheSideAnimations(cardViews)
+      )
+    );
+    return animations;
+  }
+
+  private layoutSelectedCardsWithAnimation(selectedCards: CardView[]) {
+    for (let i = 0; i < selectedCards.length; i++) {
+      const card = selectedCards[i];
       anime({
         targets: card,
         x:
           Application.WIDTH / 2 -
-          (Layout.spacing(2) * (cards.length - 1)) / 2 +
+          (Layout.spacing(2) * (selectedCards.length - 1)) / 2 +
           Layout.spacing(2) * i,
         y: Application.HEIGHT / 2,
         rotation: Math.random() * Math.PI * 2,
@@ -283,57 +412,45 @@ class TycoonViewController extends ViewController {
     }
   }
 
-  private handleSocketLose = () => {
-    this.addView(this.gameOverAlert);
-  };
-
-  private handleSocketUpdate = (lastCardJsons: CardJson[]) => {
-    const theirSelectedCards = lastCardJsons.map((json) => {
-      const card = Card.fromJson(json);
-      card.setCenterAsOrigin();
-      card.x = this.theirInfoView.x;
-      card.y = this.theirInfoView.y;
-      return card;
-    });
-
-    this.tycoon.play(theirSelectedCards);
-    this.numTheirCards -= theirSelectedCards.length;
-
-    const isPass = theirSelectedCards.length === 0;
-    if (isPass) {
-      this.removePlayedCardsWithAnimation();
-      this.showTheirSpeechWithAnimation(() => {
-        this.removeView(this.theirPassSpeech);
-      });
-    } else {
-      if (this.tycoon.getPrevCards().length === 0) {
-        this.playedCards.forEach((cards) => this.removeViews(...cards));
-        this.playedCards = [];
-      } else {
-        this.addViews(...theirSelectedCards);
-        this.layoutSelectedCardsWithAnimation(theirSelectedCards);
-        this.playedCards.push(theirSelectedCards);
-        Sound.play("cardPlace1.ogg");
-      }
+  private createThrowCardsToTheCenterAnimations(selectedCards: CardView[]) {
+    const animes: anime.AnimeInstance[] = [];
+    for (let i = 0; i < selectedCards.length; i++) {
+      const card = selectedCards[i];
+      animes.push(
+        anime({
+          targets: card,
+          x:
+            Application.WIDTH / 2 -
+            (Layout.spacing(2) * (selectedCards.length - 1)) / 2 +
+            Layout.spacing(2) * i,
+          y: Application.HEIGHT / 2,
+          rotation: Math.random() * Math.PI * 2,
+          easing: "easeOutQuad",
+        })
+      );
     }
+    return animes;
+  }
 
-    this.update();
-  };
-
-  private showTheirSpeechWithAnimation(onComplete: () => void) {
-    this.addView(this.theirPassSpeech);
-
-    const obj = {
-      scale: 0,
-    };
-    this.theirPassSpeech.scale.set(0);
+  private showTheirSpeechWithAnimation() {
+    this.addView(this.passSpeech);
+    const targets = { scale: 0 };
+    this.passSpeech.scale.set(0);
     anime({
-      targets: obj,
+      targets,
       scale: 1,
-      update: () => {
-        this.theirPassSpeech.scale.set(obj.scale);
-      },
-      complete: onComplete,
+      update: () => this.passSpeech.scale.set(targets.scale),
+      complete: () => this.removeView(this.passSpeech),
+    });
+  }
+
+  private createPassSpeechScaleUpAnimation() {
+    const targets = { scale: 0 };
+    this.passSpeech.scale.set(0);
+    return anime({
+      targets,
+      scale: 1,
+      update: () => this.passSpeech.scale.set(targets.scale),
     });
   }
 
@@ -353,11 +470,20 @@ class TycoonViewController extends ViewController {
       this.myInfoView.removeTurnIndicator();
       this.theirInfoView.addTurnIndicator();
     }
+
+    const numCards = this.tycoon.getMyCards().length;
+    const numTheirCards = this.tycoon.getNumTheirCards();
+    this.myInfoView.updateNumCardsLeftText(numCards);
+    this.theirInfoView.updateNumCardsLeftText(numTheirCards);
   }
 
   private updateActionButton() {
     if (this.tycoon.isMyTurn()) {
-      if (this.tycoon.validateNextCards(this.getSelectedCards())) {
+      if (
+        this.tycoon.validateNextCards(
+          this.getSelectedCards().map((cv) => cv.model)
+        )
+      ) {
         this.actionButton.enable();
         if (this.getSelectedCards().length === 0) {
           this.actionButton.updateText("Pass 🤷");
@@ -373,11 +499,11 @@ class TycoonViewController extends ViewController {
   }
 
   private getSelectedCards() {
-    return this.myCards.filter((card) => card.isSelected());
+    return this.myCardViews.filter((card) => card.isSelected());
   }
 
   private getUnselectedCards() {
-    return this.myCards.filter((card) => !card.isSelected());
+    return this.myCardViews.filter((card) => !card.isSelected());
   }
 
   private handlePointerDown = () => {
@@ -385,15 +511,29 @@ class TycoonViewController extends ViewController {
     this.updateActionButton();
   };
 
-  protected draw() {
-    super.draw();
-    this.addView(this.myInfoView);
-    this.addView(this.theirInfoView);
-    this.addView(this.trashText);
-  }
+  private createRepositionMyCardsAnimations() {
+    const animes: anime.AnimeInstance[] = [];
+    const circleRadius = 500;
+    const circleCenterX = Application.WIDTH / 2;
+    const circleCenterY = Application.HEIGHT + circleRadius - 100;
 
-  private drawMyCards() {
-    this.addViews(...this.myCards);
+    this.myCardViews.forEach((card, index) => {
+      const startRadian = (-Math.PI / 64) * (this.myCardViews.length / 2);
+      const endRadian = -startRadian;
+      const stepRadian =
+        (endRadian - startRadian) / (this.myCardViews.length - 1);
+      const rotationRadian = startRadian + stepRadian * index || 0;
+      animes.push(
+        anime({
+          targets: card,
+          rotation: rotationRadian,
+          x: circleCenterX + circleRadius * Math.sin(rotationRadian),
+          y: circleCenterY - circleRadius * Math.cos(rotationRadian),
+        })
+      );
+    });
+
+    return animes;
   }
 
   private layoutMyCards() {
@@ -401,10 +541,11 @@ class TycoonViewController extends ViewController {
     const circleCenterX = Application.WIDTH / 2;
     const circleCenterY = Application.HEIGHT + circleRadius - 100;
 
-    this.myCards.forEach((card, index) => {
-      const startRadian = (-Math.PI / 64) * (this.myCards.length / 2);
+    this.myCardViews.forEach((card, index) => {
+      const startRadian = (-Math.PI / 64) * (this.myCardViews.length / 2);
       const endRadian = -startRadian;
-      const stepRadian = (endRadian - startRadian) / (this.myCards.length - 1);
+      const stepRadian =
+        (endRadian - startRadian) / (this.myCardViews.length - 1);
       const rotationRadian = startRadian + stepRadian * index || 0;
       card.rotation = rotationRadian;
       card.x = circleCenterX + circleRadius * Math.sin(rotationRadian);
@@ -413,11 +554,23 @@ class TycoonViewController extends ViewController {
   }
 
   private disableMyCardsInteraction() {
-    this.myCards.forEach((card) => card.disableSelection());
+    this.myCardViews.forEach((card) => card.disableSelection());
   }
 
   private enableMyCardsInteraction() {
-    this.myCards.forEach((card) => card.enableSelection());
+    this.myCardViews.forEach((card) => card.enableSelection());
+  }
+
+  private handleForcePassFromNonPass(selectedCards: CardView[]) {
+    // e.g. 8-stop
+    this.layoutSelectedCardsWithAnimation(selectedCards);
+    setTimeout(() => {
+      this.moveCardViewsToTheSideWithAnimation();
+      setTimeout(() => {
+        this.playedCardViews = [];
+        if (this.myCardViews.length === 0) this.win();
+      }, 1000);
+    }, 1000);
   }
 }
 
