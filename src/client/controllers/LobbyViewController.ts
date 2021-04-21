@@ -6,11 +6,17 @@ import HostRoomViewController from "./HostRoomViewController";
 import GuestRoomViewController from "./GuestRoomViewController";
 import Layout from "../Layout";
 import JoinRoomOverlay from "../views/JoinRoomOverlay";
+import CreateRoomOverlay from "../views/CreateRoomOverlay";
+import { RoomJson } from "../../common/Room";
+import Speech from "../views/Speech";
 
 class LobbyViewController extends ViewController {
   private titleText: Text;
+
   private createRoomButton: Button;
   private joinRoomButton: Button;
+
+  private createRoomOverlay: CreateRoomOverlay;
   private joinRoomOverlay: JoinRoomOverlay;
 
   constructor() {
@@ -18,6 +24,7 @@ class LobbyViewController extends ViewController {
     this.titleText = new Text("💁 Lobby 💁");
     this.createRoomButton = this.createCreateRoomButton();
     this.joinRoomButton = this.createJoinRoomButton();
+    this.createRoomOverlay = this.createCreateRoomOverlay();
     this.joinRoomOverlay = this.createJoinRoomPopup();
   }
 
@@ -90,21 +97,31 @@ class LobbyViewController extends ViewController {
     return button;
   }
 
-  private handleCreateRoomButtonPointerDown = () => {
+  private createCreateRoomOverlay() {
+    const overlay = new CreateRoomOverlay();
+    overlay.onCreate(this.handleCreateButtonPointerDown);
+    return overlay;
+  }
+
+  private handleCreateButtonPointerDown = () => {
     const socket = Application.shared.socket;
-    socket.emit("lobby-create-room");
+    socket.emit("lobby-create-room", this.createRoomOverlay.getCapacity());
+  };
+
+  private handleCreateRoomButtonPointerDown = () => {
+    this.addView(this.createRoomOverlay);
   };
 
   private handleJoinRoomButtonPointerDown = () => {
     this.addView(this.joinRoomOverlay);
   };
 
-  private handleSocketCreateRoomSuccess = (roomId: string) => {
-    this.loadViewController(new HostRoomViewController(roomId));
+  private handleSocketCreateRoomSuccess = (roomJson: RoomJson) => {
+    this.loadViewController(new HostRoomViewController(roomJson));
   };
 
-  private handleSocketJoinRoomSuccess = (roomId: string) => {
-    this.loadViewController(new GuestRoomViewController(roomId));
+  private handleSocketJoinRoomSuccess = (roomJson: RoomJson) => {
+    this.loadViewController(new GuestRoomViewController(roomJson));
   };
 }
 

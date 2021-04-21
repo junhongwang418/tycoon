@@ -9,23 +9,34 @@ interface SocketCallbackBundle {
   onDisconnectHandler: () => void;
 }
 
+export interface RoomParams {
+  id: string;
+  capacity: number;
+}
+
 class Room {
   public static readonly ID_LENGTH = 5;
-  private static readonly CAPACITY = 2;
 
   private id: string;
+  private capacity: number;
   private host: Socket;
   private guests: { [id: string]: Socket };
   private socketCallbackBundles: { [id: string]: SocketCallbackBundle };
 
   private tycoonOptions: TycoonOptions;
 
-  constructor(id: string) {
+  constructor(params: RoomParams) {
+    const { id, capacity } = params;
     this.id = id;
+    this.capacity = capacity;
     this.host = null;
     this.guests = {};
     this.socketCallbackBundles = {};
     this.tycoonOptions = TycoonUtil.createDefaultTycoonOptions();
+  }
+
+  public setId(id: string) {
+    this.id = id;
   }
 
   public addSocket(socket: Socket) {
@@ -104,7 +115,7 @@ class Room {
       });
       Lobby.shared.removeRoom(this.id);
     } else {
-      this.host.emit("room-guest-leave", this.id);
+      this.host.emit("room-guest-leave", this.toJson());
       this.emitRoomStatusUpdateToAllSockets();
     }
   };
@@ -133,14 +144,14 @@ class Room {
   }
 
   public isFull() {
-    return this.getSockets().length >= Room.CAPACITY;
+    return this.getSockets().length >= this.capacity;
   }
 
   public toJson(): RoomJson {
     return {
       id: this.id,
       numPlayers: this.getSockets().length,
-      capacity: Room.CAPACITY,
+      capacity: this.capacity,
       options: this.tycoonOptions,
     };
   }

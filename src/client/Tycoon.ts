@@ -7,22 +7,50 @@ import {
   TycoonStateKey,
   TycoonUtil,
 } from "../common/Tycoon";
-import CardView from "./views/CardView";
 
 class Tycoon {
+  private numPlayers: number;
   private myTurn: number;
   private options: TycoonOptions;
   private state: TycoonState;
-  private numTheirCards: number;
+  private numTheirCards: {
+    [turn: number]: number;
+  };
+  private passes: {
+    [turn: number]: boolean;
+  };
 
   private myCards: Card[];
   private playedCards: Card[][];
+  private prevCardsTurnNumber: number;
 
-  constructor(options: TycoonOptions) {
+  private prevTurn: number;
+
+  constructor(numPlayers: number, options: TycoonOptions) {
+    this.numPlayers = numPlayers;
     this.options = options;
     this.state = TycoonUtil.createDefaultTycoonState();
     this.myCards = [];
     this.playedCards = [];
+    this.numTheirCards = {};
+    this.prevCardsTurnNumber = null;
+    this.passes = {};
+    this.prevTurn = null;
+  }
+
+  private resetPasses() {
+    Object.keys(this.passes).forEach((key) => {
+      this.passes[key] = false;
+    });
+  }
+
+  public isGameOver() {
+    return (
+      [...Object.values(this.numTheirCards), this.myCards.length].filter(
+        (len) => len === 0
+      ).length ===
+      this.numPlayers - 1
+    );
   }
 
   public getMyCards() {
@@ -37,7 +65,13 @@ class Tycoon {
     const { myTurn, cardJsons } = data;
     this.myTurn = myTurn;
     this.myCards = cardJsons.map((json) => Card.fromJson(json));
-    this.numTheirCards = cardJsons.length;
+
+    for (let i = 0; i < this.numPlayers; i++) {
+      if (i !== myTurn) {
+        this.numTheirCards[i] = cardJsons.length;
+      }
+      this.passes[i] = false;
+    }
   }
 
   public getPrevCards() {
@@ -45,29 +79,72 @@ class Tycoon {
     return this.playedCards[this.playedCards.length - 1];
   }
 
+  public getPlayedCards() {
+    return this.playedCards;
+  }
+
+  public isEveryoneElsePass() {
+    const turnNumbers = Object.keys(this.numTheirCards).filter(
+      (key) =>
+        this.numTheirCards[key] !== 0 &&
+        key !== this.prevCardsTurnNumber.toString()
+    );
+    if (this.myCards.length !== 0 && this.myTurn !== this.prevCardsTurnNumber) {
+      turnNumbers.push(this.myTurn.toString());
+    }
+    return turnNumbers.every((turn) => this.passes[turn]);
+  }
+
   public play(nextCards: Card[]) {
     if (!this.validateNextCards(nextCards)) return;
+
+    this.prevTurn = this.state[TycoonStateKey.Turn];
 
     if (this.isMyTurn()) {
       this.myCards = this.myCards.filter((card) => !nextCards.includes(card));
     } else {
-      this.numTheirCards -= nextCards.length;
+      const turn = this.state[TycoonStateKey.Turn];
+      this.numTheirCards[turn] -= nextCards.length;
     }
 
     const isPass = nextCards.length === 0;
     if (isPass) {
-      this.pass();
+      this.passes[this.state[TycoonStateKey.Turn]] = true;
+      if (this.isEveryoneElsePass()) this.pass();
     } else {
+      this.resetPasses();
+      this.prevCardsTurnNumber = null;
+
       this.maybeRevolution(nextCards);
       this.maybeTight(nextCards);
       this.maybeSequence(nextCards);
       this.maybeElevenBack(nextCards);
+
       if (this.maybeEightStop(nextCards)) return;
       if (this.maybeThreeSpadesReversal(nextCards)) return;
+
       this.playedCards.push(nextCards);
+      this.prevCardsTurnNumber = this.state[TycoonStateKey.Turn];
     }
 
-    this.state[TycoonStateKey.Turn] = (this.state[TycoonStateKey.Turn] + 1) % 2;
+    this.state[TycoonStateKey.Turn] = this.getNextTurn();
+  }
+
+  private isTurnDone(turn: number): boolean {
+    if (turn === this.myTurn) {
+      return this.myCards.length === 0;
+    } else {
+      return this.numTheirCards[turn] === 0;
+    }
+  }
+
+  private getNextTurn() {
+    let turn = this.state[TycoonStateKey.Turn];
+    do {
+      turn += 1;
+      turn = turn % this.numPlayers;
+    } while (this.isTurnDone(turn));
+    return turn;
   }
 
   private maybeThreeSpadesReversal(nextCards: Card[]) {
@@ -107,6 +184,8 @@ class Tycoon {
     this.state[TycoonStateKey.ElevenBack] = false;
     this.state[TycoonStateKey.Tight] = [];
     this.state[TycoonStateKey.Sequence] = false;
+    this.prevCardsTurnNumber = null;
+    this.resetPasses();
   }
 
   private checkThreeSpadesReversal(nextCards: Card[]) {
@@ -309,6 +388,22 @@ class Tycoon {
 
   public isMyTurn() {
     return this.myTurn === this.state[TycoonStateKey.Turn];
+  }
+
+  public getMyTurn() {
+    return this.myTurn;
+  }
+
+  public getNumPlayers() {
+    return this.numPlayers;
+  }
+
+  public getCurrentTurn() {
+    return this.state[TycoonStateKey.Turn];
+  }
+
+  public getPrevTurn() {
+    return this.prevTurn;
   }
 }
 

@@ -3,7 +3,7 @@ import { Socket } from "socket.io";
 import Algorithm from "../common/Algorithm";
 
 interface SocketCallbackBundle {
-  onLobbyCreateRoomHandler: () => void;
+  onLobbyCreateRoomHandler: (capacity: number) => void;
   onLobbyJoinRoomHandler: (roomId: string) => void;
   onDisconnectHandler: () => void;
 }
@@ -20,8 +20,8 @@ class Lobby {
   }
 
   public addSocket(socket: Socket) {
-    const onLobbyCreateRoomHandler = () =>
-      this.handleSocketLobbyCreateRoom(socket);
+    const onLobbyCreateRoomHandler = (capacity: number) =>
+      this.handleSocketLobbyCreateRoom(socket, capacity);
     const onLobbyJoinRoomHandler = (roomId: string) =>
       this.handleSocketLobbyJoinRoom(socket, roomId);
     const onDisconnectHandler = () => this.handleSocketDisconnect(socket);
@@ -44,17 +44,17 @@ class Lobby {
   private handleSocketLobbyJoinRoom = (socket: Socket, roomId: string) => {
     const room = this.rooms[roomId];
     if (room && !room.isFull()) {
-      socket.emit("lobby-join-room-success", roomId);
+      socket.emit("lobby-join-room-success", room.toJson());
       this.removeSocket(socket);
       room.addSocket(socket);
     }
   };
 
-  private handleSocketLobbyCreateRoom = (socket: Socket) => {
-    const roomId = this.generateUniqueRoomId();
-    const room = new Room(roomId);
-    this.rooms[roomId] = room;
-    socket.emit("lobby-create-room-success", roomId);
+  private handleSocketLobbyCreateRoom = (socket: Socket, capacity: number) => {
+    const id = this.generateUniqueRoomId();
+    const room = new Room({ id, capacity });
+    this.rooms[id] = room;
+    socket.emit("lobby-create-room-success", room.toJson());
     this.removeSocket(socket);
     room.addSocket(socket);
   };
@@ -76,7 +76,7 @@ class Lobby {
   }
 
   private generateUniqueRoomId() {
-    let roomId;
+    let roomId: string;
     do {
       roomId = Algorithm.randomDigitString(Room.ID_LENGTH);
     } while (this.rooms[roomId] != null);

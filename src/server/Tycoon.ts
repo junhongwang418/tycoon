@@ -9,8 +9,6 @@ interface SocketCallbackBundle {
 }
 
 class Tycoon {
-  private static readonly NUM_CARDS_PER_PLAYER = 16;
-
   private sockets: Socket[];
   private cardDeck: CardDeck;
   private socketCallbackBundles: { [id: string]: SocketCallbackBundle };
@@ -54,10 +52,15 @@ class Tycoon {
   }
 
   private handleSocketTycoonInit = (socket: Socket) => {
-    const cards = this.cardDeck.drawMany(Tycoon.NUM_CARDS_PER_PLAYER);
+    const numCardsPerPlayer = Math.min(
+      Math.floor(CardDeck.NUM_CARDS / this.sockets.length),
+      18
+    );
+    const cards = this.cardDeck.drawMany(2);
     const data: SocketInitSuccessData = {
       cardJsons: cards.map((card) => card.toJson()),
       myTurn: this.sockets.findIndex((s) => s.id === socket.id),
+      numPlayers: this.sockets.length,
     };
     socket.emit("tycoon-init-success", data);
   };

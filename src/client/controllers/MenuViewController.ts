@@ -4,6 +4,7 @@ import LobbyViewController from "./LobbyViewController";
 import Text from "../views/Text";
 import ViewController from "./ViewController";
 import Layout from "../Layout";
+import Speech from "../views/Speech";
 
 class MenuViewController extends ViewController {
   private titleText: Text;

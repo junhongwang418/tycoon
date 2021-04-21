@@ -11,14 +11,15 @@ class Speech extends View {
 
   constructor(text: string, style?: Partial<PIXI.ITextStyle>) {
     super();
-    this.bubble = new Text("💬", { fontSize: 128 });
+    this.bubble = new Text("💬", { fontSize: 64 });
     this.tape = new Frame({
-      width: 64,
-      height: 16,
+      width: 32,
+      height: 8,
       fill: Color.SpeechBubbleBackground,
     });
     this.content = new Text(text, {
       fill: Color.Black,
+      fontSize: 16,
       ...style,
     });
   }
@@ -41,14 +42,14 @@ class Speech extends View {
   }
 
   private layoutTape() {
-    this.tape.x = (this.bubble.getTextSize().width - 64) / 2;
-    this.tape.y = (this.bubble.getTextSize().height - 16) / 2 - 16;
+    this.tape.x = (this.bubble.getTextSize().width - 32) / 2;
+    this.tape.y = (this.bubble.getTextSize().height - 8) / 2 - 8;
   }
 
   private layoutContent() {
     this.content.setCenterAsOrigin();
     this.content.x = this.bubble.getTextSize().width / 2;
-    this.content.y = this.bubble.getTextSize().height / 2 - 16;
+    this.content.y = this.bubble.getTextSize().height / 2 - 8;
   }
 }
 

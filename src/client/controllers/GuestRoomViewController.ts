@@ -3,6 +3,7 @@ import Application from "../Application";
 import RoomViewController from "./RoomViewController";
 import LobbyViewController from "./LobbyViewController";
 import Text from "../views/Text";
+import { RoomJson } from "../../common/Room";
 
 class GuestRoomViewController extends RoomViewController {
   private static readonly PROMPT_TEXT_FONT_SIZE = 16;
@@ -10,8 +11,8 @@ class GuestRoomViewController extends RoomViewController {
   private promptText: Text;
   private hostLeftRoomAlert: Alert;
 
-  constructor(roomId: string) {
-    super(roomId);
+  constructor(roomJson: RoomJson) {
+    super(roomJson);
     this.promptText = new Text("Waiting for the host to start the game...", {
       fontSize: GuestRoomViewController.PROMPT_TEXT_FONT_SIZE,
     });

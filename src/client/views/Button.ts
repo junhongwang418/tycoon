@@ -75,7 +75,6 @@ class Button extends View {
   }
 
   private handlePointerDown = () => {
-    this.setAlpha(1);
     this.pointerDownCallback();
     Sound.play("click1.ogg");
   };

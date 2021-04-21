@@ -2,7 +2,8 @@ import Card, { CardSuit, CardValue } from "../common/Card";
 import Algorithm from "../common/Algorithm";
 
 class CardDeck {
-  private static readonly NUM_JOKERS = 2;
+  public static readonly NUM_CARDS = 54;
+  public static readonly NUM_JOKERS = 2;
 
   private cards: Card[];
 

@@ -13,6 +13,7 @@ class PlayerInfoView extends View {
   private playerNameText: Text;
   private numCardsLeftText: Text;
   private turnIndicator: TurnIndicator;
+  private doneText: Text;
 
   constructor(playerName: string) {
     super();
@@ -20,6 +21,7 @@ class PlayerInfoView extends View {
     this.playerNameText = new Text(playerName, { fontSize: 16 });
     this.numCardsLeftText = new Text("", { fontSize: 12 });
     this.turnIndicator = new TurnIndicator();
+    this.doneText = new Text("🙌");
   }
 
   protected layout() {
@@ -27,6 +29,16 @@ class PlayerInfoView extends View {
     this.layoutPlayerNameText();
     this.layoutNumCardsLeftText();
     this.layoutTurnIndicator();
+    this.layoutDoneText();
+  }
+
+  private layoutDoneText() {
+    this.doneText.setCenterAsOrigin();
+    this.doneText.x = PlayerInfoView.WIDTH / 2;
+    this.doneText.y =
+      PlayerInfoView.HEIGHT -
+      this.doneText.getTextSize().height / 2 -
+      Layout.spacing(1);
   }
 
   private layoutTurnIndicator() {
@@ -79,6 +91,7 @@ class PlayerInfoView extends View {
 
   public updateNumCardsLeftText(numCardsLeft: number) {
     this.numCardsLeftText.updateText(`Cards Left: ${numCardsLeft}`);
+    if (numCardsLeft === 0) this.addView(this.doneText);
   }
 }
 

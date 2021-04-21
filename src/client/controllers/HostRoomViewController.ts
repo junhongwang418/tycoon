@@ -4,14 +4,15 @@ import { TycoonOptionKey } from "../../common/Tycoon";
 import RoomViewController from "./RoomViewController";
 import Layout from "../Layout";
 import TycoonOptionsEditor from "../views/TycoonOptionsEditor";
+import { RoomJson } from "../../common/Room";
 
 class HostRoomViewController extends RoomViewController {
   private startButton: Button;
   private settingsButton: Button;
   private tycoonOptionsEditor: TycoonOptionsEditor;
 
-  constructor(roomId: string) {
-    super(roomId);
+  constructor(roomJson: RoomJson) {
+    super(roomJson);
     this.startButton = this.createStartButton();
     this.settingsButton = this.createSettingsButton();
     this.tycoonOptionsEditor = this.createTycoonOptionsEditor();
