@@ -54,8 +54,7 @@ class Application {
   private handleWebFontLoad() {
     document.body.appendChild(this.app.view);
     const vc = new LoadingViewController();
-    vc.init();
-    vc.addEventListeners();
+    vc.load();
     this.addViewController(vc);
   }
 }

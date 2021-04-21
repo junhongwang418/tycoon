@@ -10,6 +10,10 @@ class View extends PIXI.Container {
     this.isCenterOrigin = false;
   }
 
+  public load() {
+    this.init();
+  }
+
   protected init() {
     if (this.initialized) return;
     this.layout();

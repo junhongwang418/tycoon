@@ -4,11 +4,13 @@ import CardView from "../views/CardView";
 import Application from "../Application";
 import ViewController from "./ViewController";
 import { CardJson } from "../../common/Card";
-import { TycoonOptions, SocketInitSuccessData } from "../../common/Tycoon";
+import Tycoon, {
+  TycoonOptions,
+  SocketInitSuccessData,
+} from "../../common/Tycoon";
 import LobbyViewController from "./LobbyViewController";
 import HostRoomViewController from "./HostRoomViewController";
 import Alert from "../views/Alert";
-import Tycoon from "../Tycoon";
 import anime from "animejs";
 import Speech from "../views/Speech";
 import Layout from "../Layout";
