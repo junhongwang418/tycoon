@@ -39,16 +39,16 @@ class TycoonViewController extends ViewController {
     this.actionButton = this.createActionButton();
     this.hostLeftRoomAlert = this.createHostLeftRoomAlert();
     this.guestLeftRoomAlert = new Alert("The guest left the game :(");
-    this.playerInfoViews = this.createTheirInfoViews(numPlayers);
+    this.playerInfoViews = this.createPlayerInfoViews(numPlayers);
     this.passSpeech = new Speech("Pass");
 
     this.enableInteraction();
   }
 
-  private createTheirInfoViews(numPlayers: number) {
+  private createPlayerInfoViews(numPlayers: number) {
     const playerInfoViews: PlayerInfoView[] = [];
     for (let i = 0; i < numPlayers; i++) {
-      playerInfoViews[i] = new PlayerInfoView(`Player${i + 1}`);
+      playerInfoViews[i] = new PlayerInfoView(`Player ${i}`);
     }
     return playerInfoViews;
   }
@@ -100,39 +100,49 @@ class TycoonViewController extends ViewController {
     myPlayerInfoView.y =
       Application.HEIGHT - PlayerInfoView.HEIGHT - Layout.spacing(2);
 
+    const offset = this.tycoon.getMyTurn() % theirPlayerInfoViews.length;
+
     if (theirPlayerInfoViews.length === 1) {
-      const playerInfoView = theirPlayerInfoViews[0];
-      playerInfoView.setCenterAsOrigin();
-      playerInfoView.x = Application.WIDTH / 2;
-      playerInfoView.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView = theirPlayerInfoViews[offset];
+      this.layoutPlayerInfoViewTop(playerInfoView);
     } else if (theirPlayerInfoViews.length === 2) {
-      const playerInfoView1 = theirPlayerInfoViews[0];
-      playerInfoView1.setCenterAsOrigin();
-      playerInfoView1.x = PlayerInfoView.WIDTH / 2 + Layout.spacing(2);
-      playerInfoView1.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView1 = theirPlayerInfoViews[offset];
+      this.layoutPlayerInfoViewTopLeft(playerInfoView1);
 
-      const playerInfoView2 = theirPlayerInfoViews[1];
-      playerInfoView2.setCenterAsOrigin();
-      playerInfoView2.x =
-        Application.WIDTH - PlayerInfoView.WIDTH / 2 - Layout.spacing(2);
-      playerInfoView2.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView2 =
+        theirPlayerInfoViews[(1 + offset) % theirPlayerInfoViews.length];
+      this.layoutPlayerInfoViewTopRight(playerInfoView2);
     } else if (theirPlayerInfoViews.length === 3) {
-      const playerInfoView1 = theirPlayerInfoViews[0];
-      playerInfoView1.setCenterAsOrigin();
-      playerInfoView1.x = PlayerInfoView.WIDTH / 2 + Layout.spacing(2);
-      playerInfoView1.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView1 = theirPlayerInfoViews[offset];
+      this.layoutPlayerInfoViewTopLeft(playerInfoView1);
 
-      const playerInfoView2 = theirPlayerInfoViews[1];
-      playerInfoView2.setCenterAsOrigin();
-      playerInfoView2.x = Application.WIDTH / 2;
-      playerInfoView2.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView2 =
+        theirPlayerInfoViews[(1 + offset) % theirPlayerInfoViews.length];
+      this.layoutPlayerInfoViewTop(playerInfoView2);
 
-      const playerInfoView3 = theirPlayerInfoViews[2];
-      playerInfoView3.setCenterAsOrigin();
-      playerInfoView3.x =
-        Application.WIDTH - PlayerInfoView.WIDTH / 2 - Layout.spacing(2);
-      playerInfoView3.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+      const playerInfoView3 =
+        theirPlayerInfoViews[(2 + offset) % theirPlayerInfoViews.length];
+      this.layoutPlayerInfoViewTopRight(playerInfoView3);
     }
+  }
+
+  private layoutPlayerInfoViewTopLeft(playerInfoView: PlayerInfoView) {
+    playerInfoView.setCenterAsOrigin();
+    playerInfoView.x = PlayerInfoView.WIDTH / 2 + Layout.spacing(2);
+    playerInfoView.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+  }
+
+  private layoutPlayerInfoViewTop(playerInfoView: PlayerInfoView) {
+    playerInfoView.setCenterAsOrigin();
+    playerInfoView.x = Application.WIDTH / 2;
+    playerInfoView.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
+  }
+
+  private layoutPlayerInfoViewTopRight(playerInfoView: PlayerInfoView) {
+    playerInfoView.setCenterAsOrigin();
+    playerInfoView.x =
+      Application.WIDTH - PlayerInfoView.WIDTH / 2 - Layout.spacing(2);
+    playerInfoView.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
   }
 
   private layoutActionButton() {
