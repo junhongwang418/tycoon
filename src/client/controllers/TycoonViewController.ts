@@ -124,7 +124,7 @@ class TycoonViewController extends ViewController {
 
       const playerInfoView2 = theirPlayerInfoViews[1];
       playerInfoView2.setCenterAsOrigin();
-      playerInfoView2.x = Application.WIDTH - PlayerInfoView.WIDTH / 2;
+      playerInfoView2.x = Application.WIDTH / 2;
       playerInfoView2.y = PlayerInfoView.HEIGHT / 2 + Layout.spacing(2);
 
       const playerInfoView3 = theirPlayerInfoViews[2];
