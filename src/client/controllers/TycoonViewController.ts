@@ -302,11 +302,13 @@ class TycoonViewController extends ViewController {
   }
 
   private handleTheyPlay(cardJsons: CardJson[]) {
+    const currentTurn = this.tycoon.getCurrentTurn();
+
     const cardViews = cardJsons.map((json) => {
       const cardView = CardView.fromJson(json);
       cardView.setCenterAsOrigin();
-      cardView.x = Application.WIDTH / 2;
-      cardView.y = Layout.spacing(2);
+      cardView.x = this.playerInfoViews[currentTurn].x;
+      cardView.y = this.playerInfoViews[currentTurn].y;
       return cardView;
     });
     this.addViews(...cardViews);

@@ -56,7 +56,7 @@ class Tycoon {
       Math.floor(CardDeck.NUM_CARDS / this.sockets.length),
       18
     );
-    const cards = this.cardDeck.drawMany(2);
+    const cards = this.cardDeck.drawMany(numCardsPerPlayer);
     const data: SocketInitSuccessData = {
       cardJsons: cards.map((card) => card.toJson()),
       myTurn: this.sockets.findIndex((s) => s.id === socket.id),
