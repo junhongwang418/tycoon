@@ -9,7 +9,7 @@
 
 ## 🃏 How to Play
 
-Visit the [demo link](https://ioneone-tycoon.herokuapp.com/) and click `Create Room`.
+Click `Create Room`.
 
 <p align="center">
   <img src="res/lobby.png" alt="lobby" />
