@@ -7,12 +7,6 @@
 ![github workflow badge](https://github.com/ioneone/tycoon/actions/workflows/node.js.yml/badge.svg)
 ![lines of code](https://tokei.rs/b1/github/ioneone/tycoon)
 
-## 🎮 Demo
-
-https://ioneone-tycoon.herokuapp.com/
-
-It may take a while to load for the first time because I host the game with Heroku's free dyno.
-
 ## 🃏 How to Play
 
 Visit the [demo link](https://ioneone-tycoon.herokuapp.com/) and click `Create Room`.
